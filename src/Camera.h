@@ -5,6 +5,9 @@
 #include "events/MouseListener.h"
 #include "render/Renderer.h"
 
+// Most of the code here is shamelessly stolen from www.learnopengl.com
+// WTF was I supposed to do ? I'm only 16, I don't even know Calcus, Linear Algerbra and all that bullshit
+
 class Camera {
 private:
 	glm::vec3 cameraPos;
@@ -25,11 +28,11 @@ public:
 	void Init(GLFWwindow *window) {
 		this->window = window;
 
-		cameraPos = glm::vec3(0.0f, 0.0f,  0.0f);
+		cameraPos = glm::vec3(5.0f, 5.0f,  -5.0f);
 		cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 		cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
 
-		renderer->SetProjection(glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.01f, 100.0f));
+		renderer->SetProjection(glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.01f, 200.0f));
 		renderer->SetModel(glm::mat4(1.0f));
 	}
 
@@ -57,9 +60,7 @@ public:
 		if (mouseListener->isMoved()) {
 			double xpos = mouseListener->getX();
 			double ypos = mouseListener->getY();
-
-			// std::cout << xpos << " : " << ypos << std::endl;
-
+			
 			if (firstMouse) {
 				lastX = xpos;
 				lastY = ypos;

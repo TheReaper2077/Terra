@@ -49,6 +49,7 @@ public:
 		glGenerateMipmap(id);
 
 		data = stbi_load(filename, &width, &height, &nr_channels, 0);
+		
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		stbi_image_free(data);
 

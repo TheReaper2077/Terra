@@ -276,12 +276,12 @@ public:
 		TextureRect(pos.x, pos.y, dimension.x, dimension.y, uv_pos.x, uv_pos.y, uv_size.x, uv_size.y, texture);
 	}
 
-	void TextureRect(const glm::vec2 &pos, const glm::vec2 &dimension, const Tile tile) {
-		TextureRect(pos.x, pos.y, dimension.x, dimension.y, tile.x, tile.y, tile.w, tile.h, tile.texture);
+	void TextureRect(const glm::vec2 &pos, const glm::vec2 &dimension, Tile &tile) {
+		TextureRect(pos.x, pos.y, dimension.x, dimension.y, tile.x, tile.y, tile.w, tile.h, &tile.texture);
 	}
 
-	void TextureRect(float x, float y, float w, float h, const Tile tile) {
-		TextureRect(x, y, w, h, tile.x, tile.y, tile.w, tile.h, tile.texture);
+	void TextureRect(float x, float y, float w, float h, Tile &tile) {
+		TextureRect(x, y, w, h, tile.x, tile.y, tile.w, tile.h, &tile.texture);
 	}
 
 	void TextureRect(float x, float y, float w, float h, float tx, float ty, float tw, float th, Texture *texture) {
@@ -306,16 +306,28 @@ public:
 
 		float index = index_tex_map[texture->id];
 
-		vertices.emplace_back(Vertex2D{x, y, tex_color, tx, ty, index});
-		vertices.emplace_back(Vertex2D{x, y + h, tex_color, tx, ty + th, index});
-		vertices.emplace_back(Vertex2D{x + w, y + h, tex_color, tx + tw, ty + th, index});
-		vertices.emplace_back(Vertex2D{x + w, y, tex_color, tx + tw, ty, index});
+		vertices.emplace_back(Vertex2D{x, y, tex_color, tx + tw, ty + th, index});
+		vertices.emplace_back(Vertex2D{x, y + h, tex_color, tx + tw, ty, index});
+		vertices.emplace_back(Vertex2D{x + w, y + h, tex_color, tx, ty, index});
+		vertices.emplace_back(Vertex2D{x + w, y, tex_color, tx, ty + th, index});
 
 		render_type = TEXTURE_RECT;
 	}
 
+	void TextureCube(float x, float y, float z, float w, float h, float d, Tile &tile, const Faces &faces) {
+		TextureCube(x, y, z, w, h, d, tile.x, tile.y, tile.w, tile.h, &tile.texture, faces, vertices);
+	}
+
+	void TextureCube(float x, float y, float z, float w, float h, float d, Tile &tile, const Faces &faces, std::vector<Vertex2D> &mesh) {
+		TextureCube(x, y, z, w, h, d, tile.x, tile.y, tile.w, tile.h, &tile.texture, faces, mesh);
+	}
+
 	void TextureCube(float x, float y, float z, float w, float h, float d, float tx, float ty, float tw, float th, Texture *texture, const Faces &faces) {
-		if (next_tex_index > 5 || render_type != TEXTURE_RECT) {
+		TextureCube(x, y, z, w, h, d, tx, ty, tw, th, texture, faces, vertices);
+	}
+
+	void TextureCube(float x, float y, float z, float w, float h, float d, float tx, float ty, float tw, float th, Texture *texture, const Faces &faces, std::vector<Vertex2D> &mesh) {
+		if (next_tex_index > 5 || render_type != TEXTURE_CUBE) {
 			Render();
 		}
 
@@ -326,11 +338,10 @@ public:
 		tw /= texture->width;
 		th /= texture->height;
 
-		vertices.reserve(curr_quads*4);
+		mesh.reserve(mesh.size() + faces.count());
 		
 		if (index_tex_map.find(texture->id) == index_tex_map.end()) {
 			index_tex_map[texture->id] = next_tex_index;
-			texture_handler->bindTextureUnit(next_tex_index, texture->id);
 			next_tex_index++;
 		}
 
@@ -344,43 +355,141 @@ public:
 		// right
 
 		if (faces[0]) {
-			vertices.emplace_back(Vertex2D{x, y, z, tex_color, tx, ty, index});
-			vertices.emplace_back(Vertex2D{x, y + h, z, tex_color, tx, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y + h, z, tex_color, tx + tw, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y, z, tex_color, tx + tw, ty, index});
+			// mesh.emplace_back(Vertex2D{x, y, z, tex_color, tx, ty, index});
+			// mesh.emplace_back(Vertex2D{x, y + h, z, tex_color, tx, ty + th, index});
+			// mesh.emplace_back(Vertex2D{x + w, y + h, z, tex_color, tx + tw, ty + th, index});
+			// mesh.emplace_back(Vertex2D{x + w, y, z, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x, y, z, tex_color, tx + tw, ty + th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tex_color, tx, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tex_color, tx, ty + th, index});
 		}
 		if (faces[1]) {
-			vertices.emplace_back(Vertex2D{x, y, z + d, tex_color, tx, ty, index});
-			vertices.emplace_back(Vertex2D{x, y + h, z + d, tex_color, tx, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, tx + tw, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y, z + d, tex_color, tx + tw, ty, index});
+			// mesh.emplace_back(Vertex2D{x, y, z + d, tex_color, tx, ty, index});
+			// mesh.emplace_back(Vertex2D{x, y + h, z + d, tex_color, tx, ty + th, index});
+			// mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, tx + tw, ty + th, index});
+			// mesh.emplace_back(Vertex2D{x + w, y, z + d, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x, y, z + d, tex_color, tx + tw, ty + th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, tx, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tex_color, tx, ty + th, index});
 		}
 		if (faces[2]) {
-			vertices.emplace_back(Vertex2D{x, y + h, z, tex_color, tx, ty, index});
-			vertices.emplace_back(Vertex2D{x, y + h, z + d, tex_color, tx, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, tx + tw, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y + h, z, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z, tex_color, tx + tw, ty + th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, tx, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tex_color, tx, ty + th, index});
 		}
 		if (faces[3]) {
-			vertices.emplace_back(Vertex2D{x, y, z, tex_color, tx, ty, index});
-			vertices.emplace_back(Vertex2D{x, y, z + d, tex_color, tx, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y, z + d, tex_color, tx + tw, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y, z, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x, y, z, tex_color, tx + tw, ty + th, index});
+			mesh.emplace_back(Vertex2D{x, y, z + d, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tex_color, tx, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tex_color, tx, ty + th, index});
 		}
 		if (faces[4]) {
-			vertices.emplace_back(Vertex2D{x, y, z + d, tex_color, tx, ty, index});
-			vertices.emplace_back(Vertex2D{x, y + h, z + d, tex_color, tx, ty + th, index});
-			vertices.emplace_back(Vertex2D{x, y + h, z, tex_color, tx + tw, ty + th, index});
-			vertices.emplace_back(Vertex2D{x, y, z, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x, y, z + d, tex_color, tx + tw, ty + th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z, tex_color, tx, ty, index});
+			mesh.emplace_back(Vertex2D{x, y, z, tex_color, tx, ty + th, index});
 		}
 		if (faces[5]) {
-			vertices.emplace_back(Vertex2D{x + w, y, z + d, tex_color, tx, ty, index});
-			vertices.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, tx, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y + h, z, tex_color, tx + tw, ty + th, index});
-			vertices.emplace_back(Vertex2D{x + w, y, z, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tex_color, tx + tw, ty + th, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, tx + tw, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tex_color, tx, ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tex_color, tx, ty + th, index});
 		}
 
-		render_type = TEXTURE_RECT;
+		render_type = TEXTURE_CUBE;
+	}
+
+	float GetTextureIndex(Texture *texture) {
+		if (index_tex_map.find(texture->id) == index_tex_map.end()) {
+			index_tex_map[texture->id] = next_tex_index;
+			next_tex_index++;
+		}
+
+		return index_tex_map[texture->id];
+	}
+
+	TileRegistry *tile_registry = TileRegistry::SharedInstance();
+
+	void TextureCube(float x, float y, float z, float w, float h, float d, const BlockID &id, const Faces &faces, std::vector<Vertex2D> &mesh) {
+		if (next_tex_index > 5 || render_type != TEXTURE_CUBE) {
+			Render();
+		}
+
+		auto& block = tile_registry->GetBlock(id);
+
+		auto& front = tile_registry->GetTile(block.front);
+		auto& back = tile_registry->GetTile(block.back);
+		auto& top = tile_registry->GetTile(block.top);
+		auto& bottom = tile_registry->GetTile(block.bottom);
+		auto& left = tile_registry->GetTile(block.left);
+		auto& right = tile_registry->GetTile(block.right);
+
+		curr_quads += faces.count();
+
+		mesh.reserve(mesh.size() + faces.count());
+
+		// front
+		// back
+		// top
+		// bottom
+		// left
+		// right
+
+		float index;
+
+		if (faces[0]) {
+			index = GetTextureIndex(&front.texture);
+			
+			mesh.emplace_back(Vertex2D{x, y, z, tex_color, front.tx + front.tw, front.ty + front.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z, tex_color, front.tx + front.tw, front.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tex_color, front.tx, front.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tex_color, front.tx, front.ty + front.th, index});
+		}
+		if (faces[1]) {
+			index = GetTextureIndex(&back.texture);
+
+			mesh.emplace_back(Vertex2D{x, y, z + d, tex_color, back.tx + back.tw, back.ty + back.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tex_color, back.tx + back.tw, back.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, back.tx, back.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tex_color, back.tx, back.ty + back.th, index});
+		}
+		if (faces[3]) {
+			index = GetTextureIndex(&bottom.texture);
+
+			mesh.emplace_back(Vertex2D{x, y, z, tex_color, bottom.tx + bottom.tw, bottom.ty + bottom.th, index});
+			mesh.emplace_back(Vertex2D{x, y, z + d, tex_color, bottom.tx + bottom.tw, bottom.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tex_color, bottom.tx, bottom.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tex_color, bottom.tx, bottom.ty + bottom.th, index});
+		}
+		if (faces[2]) {
+			index = GetTextureIndex(&top.texture);
+
+			mesh.emplace_back(Vertex2D{x, y + h, z, tex_color, top.tx + top.tw, top.ty + top.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tex_color, top.tx + top.tw, top.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, top.tx, top.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tex_color, top.tx, top.ty + top.th, index});
+		}
+		if (faces[4]) {
+			index = GetTextureIndex(&left.texture);
+
+			mesh.emplace_back(Vertex2D{x, y, z + d, tex_color, left.tx + left.tw, left.ty + left.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tex_color, left.tx + left.tw, left.ty, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z, tex_color, left.tx, left.ty, index});
+			mesh.emplace_back(Vertex2D{x, y, z, tex_color, left.tx, left.ty + left.th, index});
+		}
+		if (faces[5]) {
+			index = GetTextureIndex(&right.texture);
+
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tex_color, right.tx + right.tw, right.ty + right.th, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tex_color, right.tx + right.tw, right.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tex_color, right.tx, right.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tex_color, right.tx, right.ty + right.th, index});
+		}
+
+		render_type = TEXTURE_CUBE;
 	}
 
 	void Render() {
@@ -444,6 +553,10 @@ public:
 
 			texture_shader->bind();
 
+			for (const auto& pair: index_tex_map) {
+				texture_handler->bindTextureUnit(next_tex_index, pair.second);
+			}
+
 			VAO->getVBO()->Add(vertices);
 			glDrawElements(GL_TRIANGLES, curr_quads*6, GL_UNSIGNED_INT, NULL);
 			curr_quads = 0;
@@ -458,6 +571,10 @@ public:
 
 			texture_shader->bind();
 
+			for (const auto& pair: index_tex_map) {
+				texture_handler->bindTextureUnit(next_tex_index, pair.second);
+			}
+
 			VAO->getVBO()->Add(vertices);
 			glDrawElements(GL_TRIANGLES, curr_quads*6, GL_UNSIGNED_INT, NULL);
 			curr_quads = 0;
@@ -466,5 +583,23 @@ public:
 		}
 
 		vertices.clear();
+	}
+
+	void RenderMesh(std::vector<Vertex2D> &mesh) {
+		if (curr_quads > max_quads) {
+			IncreaseRectIndices();
+		}
+
+		texture_shader->bind();
+
+		for (const auto& pair: index_tex_map) {
+			texture_handler->bindTextureUnit(next_tex_index, pair.second);
+		}
+
+		VAO->getVBO()->Add(mesh);
+		glDrawElements(GL_TRIANGLES, mesh.size()*1.5, GL_UNSIGNED_INT, NULL);
+		curr_quads = 0;
+		next_tex_index = 0;
+		index_tex_map.clear();
 	}
 };
