@@ -24,7 +24,7 @@ void Window::Init() {
 	assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetWindowPos(window, 20, 20);
+	glfwSetWindowPos(window, 50, 50);
 	glfwSetKeyCallback(window, KeyListener::keyCallback);
 	glfwSetCursorPosCallback(window, MouseListener::mouseCallback);
 
@@ -62,22 +62,22 @@ void Window::Init() {
 	// renderer->SetView(glm::mat4(1.0f));
 	// renderer->SetModel(glm::mat4(1.0f));
 
-	for (int z = -16*5; z != 16*5; z++) {
-		for (int x = -16*5; x != 16*5; x++) {
-			float value = glm::simplex(glm::vec2{x / 64.0, z / 64.0});
-			value = (value + 1) / 2;
-			value *= 32 + 32;
-			for (int y = 0; y <= value; y++) {
-				if (y > value - 1) {
-					world->AddBlock(Block{SOLID, GRASS_BLOCK}, glm::ivec3(x, y, z));
-				} else if (y > value - 4) {
-					world->AddBlock(Block{SOLID, DIRT_BLOCK}, glm::ivec3(x, y, z));
-				} else {
-					world->AddBlock(Block{SOLID, STONE_BLOCK}, glm::ivec3(x, y, z));
-				}
-			}
-		}
-	}
+	// for (int z = -16*5; z != 16*5; z++) {
+	// 	for (int x = -16*5; x != 16*5; x++) {
+	// 		float value = glm::simplex(glm::vec2{x / 64.0, z / 64.0});
+	// 		value = (value + 1) / 2;
+	// 		value *= 16 + 16;
+	// 		for (int y = 0; y <= value; y++) {
+	// 			if (y > value - 1) {
+	// 				world->AddBlock(Block{SOLID, GRASS_BLOCK}, glm::ivec3(x, y, z));
+	// 			} else if (y > value - 4) {
+	// 				world->AddBlock(Block{SOLID, DIRT_BLOCK}, glm::ivec3(x, y, z));
+	// 			} else {
+	// 				world->AddBlock(Block{SOLID, STONE_BLOCK}, glm::ivec3(x, y, z));
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// for (int z = -16*1; z != 16*1; z++) {
 	// 	for (int x = -16*1; x != 16*1; x++) {

@@ -76,6 +76,10 @@ public:
 		return block_array[block_id];
 	}
 
+	BlockID &GetBlockID(const std::string &name) {
+		return block_registry_map[name];
+	}
+
 	void Render() {
 		for (const auto& tile: tile_array) {
 			// ImGui::Image((void*)(intptr_t)tile.texture->id, ImVec2(80, 80), ImVec2((float)1*80.0/tile.texture->width, 0*80.0/tile.texture->height), ImVec2((float)1*80.0/tile.texture->width, (float)1*80.0/tile.texture->height));

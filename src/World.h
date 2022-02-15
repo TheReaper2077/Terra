@@ -40,6 +40,7 @@ class Chunk {
 public:
 	Block chunk_blocks[16][16][16];
 	glm::ivec3 id;
+
 	bool init;
 	bool meshed = false;
 	bool inner_mesh = false;
@@ -49,17 +50,27 @@ public:
 		id = chunk_id;
 		init = false;
 
-		Generate();
+		// Generate();
 	}
 
 	void Generate() {
-		for (int z = 0; z != 16; z++) {
-			for (int y = 0; y != 16; y++) {
-				for (int x = 0; x != 16; x++) {
-					chunk_blocks[z][y][x] = Block{TRANSPARENT};
+		for (int z = id.z; z != 16 + id.z; z++) {
+			for (int x = id.x; x != 16 + id.x; x++) {
+				float value = glm::simplex(glm::vec2{x / 64.0, z / 64.0});
+				value = (value + 1) / 2;
+				value *= 16 + 16;
+				for (int y = 0; y <= value; y++) {
+					if (y > value - 1) {
+						Block{SOLID, tile_registry->GetBlockID("GRASS_BLOCK")};
+					} else if (y > value - 4) {
+						Block{SOLID, tile_registry->GetBlockID("DIRT_BLOCK")};
+					} else {
+						Block{SOLID, tile_registry->GetBlockID("STONE_BLOCK")};
+					}
 				}
 			}
 		}
+
 		init = true;
 	}
 
@@ -102,8 +113,6 @@ public:
 	}
 
 	void RenderMesh() {
-		// std::cout << v << " " << mesh.size() << "\n";
-		// exit(0);
 		renderer->RenderMesh(mesh);
 	}
 

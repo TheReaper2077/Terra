@@ -14,7 +14,7 @@ private:
 	glm::vec3 cameraFront;
 	glm::vec3 cameraUp;
 
-	float cameraSpeed = 0.05;
+	float cameraSpeed = 0.55;
 
 	GLFWwindow *window;
 	MouseListener *mouseListener = MouseListener::sharedInstance();
@@ -28,11 +28,11 @@ public:
 	void Init(GLFWwindow *window) {
 		this->window = window;
 
-		cameraPos = glm::vec3(5.0f, 5.0f,  -5.0f);
+		cameraPos = glm::vec3(5.0f, 50.0f,  -5.0f);
 		cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 		cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
 
-		renderer->SetProjection(glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.01f, 200.0f));
+		renderer->SetProjection(glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.01f, 400.0f));
 		renderer->SetModel(glm::mat4(1.0f));
 	}
 
