@@ -15,13 +15,13 @@ enum BlockType {
 struct Block {
 	Faces faces;
 	BlockType type;
-	TileID tile_id;
+	BlockID block_id;
 
 	Block() {}
 
-	Block(BlockType type, TileID tile) {
+	Block(BlockType type, BlockID block_id) {
 		faces.set();
-		this->tile_id = tile;
+		this->block_id = block_id;
 		this->type = type;
 	}
 
@@ -91,7 +91,8 @@ public:
 					if (block.type == TRANSPARENT) continue;
 					quads += block.faces.count();
 
-					renderer->TextureCube(id.x + x, id.y + y, id.z + z, 1, 1, 1, tile_registry->GetTile(block.tile_id), block.faces, mesh);
+					// renderer->TextureCube(id.x + x, id.y + y, id.z + z, 1, 1, 1, tile_registry->GetTile(block.tile_id), block.faces, mesh);
+					renderer->TextureCube(id.x + x, id.y + y, id.z + z, 1, 1, 1, block.block_id, block.faces, mesh);
 				}
 			}
 		}

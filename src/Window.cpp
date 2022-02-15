@@ -69,11 +69,11 @@ void Window::Init() {
 			value *= 32 + 32;
 			for (int y = 0; y <= value; y++) {
 				if (y > value - 1) {
-					world->AddBlock(Block{SOLID, GRASS_TOP}, glm::ivec3(x, y, z));
+					world->AddBlock(Block{SOLID, GRASS_BLOCK}, glm::ivec3(x, y, z));
 				} else if (y > value - 4) {
-					world->AddBlock(Block{SOLID, DIRT}, glm::ivec3(x, y, z));
+					world->AddBlock(Block{SOLID, DIRT_BLOCK}, glm::ivec3(x, y, z));
 				} else {
-					world->AddBlock(Block{SOLID, STONE}, glm::ivec3(x, y, z));
+					world->AddBlock(Block{SOLID, STONE_BLOCK}, glm::ivec3(x, y, z));
 				}
 			}
 		}
