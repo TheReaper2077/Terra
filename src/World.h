@@ -17,7 +17,10 @@ struct Block {
 	BlockType type;
 	BlockID block_id;
 
-	Block() {}
+	Block() {
+		type = TRANSPARENT;
+		faces.reset();
+	}
 
 	Block(BlockType type, BlockID block_id) {
 		faces.set();
@@ -45,6 +48,7 @@ public:
 	bool meshed = false;
 	bool inner_mesh = false;
 	bool outer_mesh = false;
+	bool top_chunk = false;
 
 	Chunk(glm::ivec3 &chunk_id) {
 		id = chunk_id;
@@ -54,19 +58,24 @@ public:
 	}
 
 	void Generate() {
-		for (int z = id.z; z != 16 + id.z; z++) {
-			for (int x = id.x; x != 16 + id.x; x++) {
-				float value = glm::simplex(glm::vec2{x / 64.0, z / 64.0});
+		for (int z = 0; z != 16; z++) {
+			for (int x = 0; x != 16; x++) {
+				float value = glm::simplex(glm::vec2{(id.x + x) / 64.0, (id.z + z) / 64.0});
 				value = (value + 1) / 2;
 				value *= 16 + 16;
-				for (int y = 0; y <= value; y++) {
+
+				int idx = 0;
+				
+				for (int y = id.y; y <= value; y++) {
+					if (idx > 15) break;
 					if (y > value - 1) {
-						Block{SOLID, tile_registry->GetBlockID("GRASS_BLOCK")};
+						chunk_blocks[z][idx][x] = Block{SOLID, tile_registry->GetBlockID("GRASS_BLOCK")};
 					} else if (y > value - 4) {
-						Block{SOLID, tile_registry->GetBlockID("DIRT_BLOCK")};
+						chunk_blocks[z][idx][x] = Block{SOLID, tile_registry->GetBlockID("DIRT_BLOCK")};
 					} else {
-						Block{SOLID, tile_registry->GetBlockID("STONE_BLOCK")};
+						chunk_blocks[z][idx][x] = Block{SOLID, tile_registry->GetBlockID("STONE_BLOCK")};
 					}
+					idx++;
 				}
 			}
 		}
@@ -140,8 +149,8 @@ public:
 };
 
 class World {
-	std::vector<std::thread> threads;
 	unsigned int next_chunk_index = 0;
+	std::vector<std::thread> threads;
 	std::vector<Chunk> world_chunks;
 	std::unordered_map<glm::ivec3, unsigned int> chunk_id_map;
 	Renderer *renderer = Renderer::SharedInstance();
@@ -168,6 +177,16 @@ public:
 
 	bool IsChunkPresent(const glm::ivec3 &pos) {
 		return (chunk_id_map.find(pos) != chunk_id_map.end());
+	}
+
+	void Generate() {
+		for (int z = -6; z != 6; z++) {
+			for (int y = 0; y != 2; y++) {
+				for (int x = -6; x != 6; x++) {
+					GetChunk(glm::ivec3(x*16, y*16, z*16))->Generate();
+				}
+			}
+		}
 	}
 
 	void Meshing(Chunk *chunk) {
@@ -252,6 +271,7 @@ public:
 
 		for (auto& chunk: world_chunks) {
 			if (chunk.meshed) continue;
+			
 			threads.push_back(std::thread(&Chunk::Render, std::ref(chunk)));
 		}
 

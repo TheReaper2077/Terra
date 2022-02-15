@@ -34,7 +34,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/matrix_cross_product.hpp>
 
-#define TITLE "RENDERER"
+#define TITLE "STUFF"
 #define WIDTH 1280
 #define HEIGHT 640
 

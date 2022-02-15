@@ -87,6 +87,8 @@ void Window::Init() {
 	// 		world->AddBlock(Block{SOLID, STONE}, glm::ivec3(x, x + z - 4, z));
 	// 	}
 	// }
+
+	world->Generate();
 }
 
 void Window::Gameloop() {
