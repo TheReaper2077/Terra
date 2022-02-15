@@ -62,7 +62,7 @@ public:
 			for (int x = 0; x != 16; x++) {
 				float value = glm::simplex(glm::vec2{(id.x + x) / 64.0, (id.z + z) / 64.0});
 				value = (value + 1) / 2;
-				value *= 16 + 16;
+				value *= 32 + 32;
 
 				int idx = 0;
 				
@@ -181,7 +181,7 @@ public:
 
 	void Generate() {
 		for (int z = -6; z != 6; z++) {
-			for (int y = 0; y != 2; y++) {
+			for (int y = 0; y != 4; y++) {
 				for (int x = -6; x != 6; x++) {
 					GetChunk(glm::ivec3(x*16, y*16, z*16))->Generate();
 				}
