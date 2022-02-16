@@ -9,7 +9,7 @@
 // WTF was I supposed to do ? I'm only 16, I don't even know Calcus, Linear Algerbra and all that bullshit
 
 class Camera {
-private:
+public:
 	glm::vec3 cameraPos;
 	glm::vec3 cameraFront;
 	glm::vec3 cameraUp;

@@ -69,11 +69,11 @@ public:
 				for (int y = id.y; y <= value; y++) {
 					if (idx > 15) break;
 					if (y > value - 1) {
-						chunk_blocks[z][idx][x] = Block{SOLID, tile_registry->GetBlockID("GRASS_BLOCK")};
+						chunk_blocks[z][idx][x] = Block{SOLID, 0};//tile_registry->GetBlockID("GRASS_BLOCK")};
 					} else if (y > value - 4) {
-						chunk_blocks[z][idx][x] = Block{SOLID, tile_registry->GetBlockID("DIRT_BLOCK")};
+						chunk_blocks[z][idx][x] = Block{SOLID, 2};//tile_registry->GetBlockID("DIRT_BLOCK")};
 					} else {
-						chunk_blocks[z][idx][x] = Block{SOLID, tile_registry->GetBlockID("STONE_BLOCK")};
+						chunk_blocks[z][idx][x] = Block{SOLID, 1};//tile_registry->GetBlockID("STONE_BLOCK")};
 					}
 					idx++;
 				}
@@ -103,6 +103,7 @@ public:
 		if (!inner_mesh) MeshChunk();
 
 		mesh.clear();
+		quads = 0;
 
 		for (int z = 0; z != 16; z++) {
 			for (int y = 0; y != 16; y++) {
@@ -119,6 +120,7 @@ public:
 
 		std::printf("%i, %i, %i\n", quads, mesh.size(), std::this_thread::get_id());
 		meshed = true;
+		inner_mesh = true;
 	}
 
 	void RenderMesh() {
@@ -144,7 +146,6 @@ public:
 			}
 		}
 
-		inner_mesh = true;
 	}
 };
 
@@ -152,23 +153,24 @@ class World {
 	unsigned int next_chunk_index = 0;
 	std::vector<std::thread> threads;
 	std::vector<Chunk> world_chunks;
+	std::vector<Chunk*> render_chunks;
 	std::unordered_map<glm::ivec3, unsigned int> chunk_id_map;
 	Renderer *renderer = Renderer::SharedInstance();
 
 public:
-	Chunk *GetChunk(const glm::ivec3 &pos) {
+	Chunk &GetChunk(const glm::ivec3 &pos) {
 		glm::ivec3 chunk_id = (pos & ~15);
 		if (chunk_id_map.find(chunk_id) == chunk_id_map.end()) {
 			std::printf("[CHUNK] (%i, %i, %i)\n", chunk_id.x, chunk_id.y, chunk_id.z);
 			chunk_id_map[chunk_id] = next_chunk_index++;
 			world_chunks.push_back(Chunk(chunk_id));
-			return &world_chunks.back();
+			return world_chunks.back();
 		}
-		return &world_chunks[chunk_id_map[chunk_id]];
+		return world_chunks[chunk_id_map[chunk_id]];
 	}
 
 	void AddBlock(Block block, glm::ivec3 pos) {
-		GetChunk(pos)->Add(pos, block);
+		GetChunk(pos).Add(pos, block);
 	}
 
 	bool IsChunkPresent(const int &x, const int &y, const int &z) {
@@ -180,22 +182,25 @@ public:
 	}
 
 	void Generate() {
-		for (int z = -6; z != 6; z++) {
+		for (int z = -10; z != 10; z++) {
 			for (int y = 0; y != 4; y++) {
-				for (int x = -6; x != 6; x++) {
-					GetChunk(glm::ivec3(x*16, y*16, z*16))->Generate();
+				for (int x = -10; x != 10; x++) {
+					GetChunk(glm::ivec3(x*16, y*16, z*16)).Generate();
 				}
 			}
 		}
+
+		generated = true;
 	}
 
 	void Meshing(Chunk *chunk) {
 		if (chunk->outer_mesh) return;
+		std::printf("[MESH] (%i, %i, %i)\n", chunk->id.x, chunk->id.y, chunk->id.z);
 
 		for (int z = 0; z != 16; z++) {
 			for (int y = 0; y != 16; y++) {
 				for (int x = 0; x != 16; x++) {
-					if ((z - 1 < 0 || z + 1 >= 16 || y - 1 < 0 || y + 1 >= 16 || x - 1 < 0 || x + 1 >= 16)) {
+					// if ((z - 1 < 0 || z + 1 >= 16 || y - 1 < 0 || y + 1 >= 16 || x - 1 < 0 || x + 1 >= 16)) {
 						auto& block = chunk->chunk_blocks[z][y][x];
 
 						if (block.type != TRANSPARENT) {
@@ -250,39 +255,84 @@ public:
 								}
 							}
 						}
-					}
+					// }
 				}
 			}
 		}
 		chunk->outer_mesh = true;
+		chunk->meshed = false;
 	}
 
-	void Render() {
-		for (auto& chunk: world_chunks) {
-			if (chunk.outer_mesh) continue;
-			threads.push_back(std::thread(&World::Meshing, this, &chunk));
-		}
+	bool generated = false;
+	std::vector<glm::ivec3> temp_vec;
 
-		for (std::thread& thread: threads) {
-			if (thread.joinable()) thread.join();
-		}
-
-		if (threads.size()) threads.clear();
-
-		for (auto& chunk: world_chunks) {
-			if (chunk.meshed) continue;
+	void Render(const glm::ivec3 &camera_pos) {
+		// for (int z = -5; z != 5; z++) {
+		// 	for (int x = -5; x != 5; x++) {
+		// 		for (int y = 0; y != 2; y++) {
+		// 			auto pos = glm::ivec3((camera_pos.x & ~15) + x*16, y*16, (camera_pos.z & ~15) + z*16);
+		// 			if (!IsChunkPresent(pos)) {
+		// 				generated = true;
+		// 				// temp_vec.push_back(pos);
+		// 				threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
+		// 				// render_chunks.push_back(&GetChunk(pos));
+		// 				glm::ivec3 id;
+		// 				id = glm::ivec3(pos.x - 16, pos.y, pos.z);
+		// 				if (IsChunkPresent(id)) {
+		// 					GetChunk(id).outer_mesh = false;
+		// 				}
+		// 				id = glm::ivec3(pos.x + 16, pos.y, pos.z);
+		// 				if (IsChunkPresent(id)) {
+		// 					GetChunk(id).outer_mesh = false;
+		// 				}
+		// 				id = glm::ivec3(pos.x, pos.y, pos.z - 16);
+		// 				if (IsChunkPresent(id)) {
+		// 					GetChunk(id).outer_mesh = false;
+		// 				}
+		// 				id = glm::ivec3(pos.x, pos.y, pos.z + 16);
+		// 				if (IsChunkPresent(id)) {
+		// 					GetChunk(id).outer_mesh = false;
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+		
+		if (generated) {
+			for (std::thread& thread: threads) {
+				if (thread.joinable()) thread.join();
+			}
+			if (threads.size()) threads.clear();
 			
-			threads.push_back(std::thread(&Chunk::Render, std::ref(chunk)));
-		}
+			for (auto& chunk: world_chunks) {
+				if (chunk.outer_mesh) continue;
+				threads.push_back(std::thread(&World::Meshing, this, &chunk));
+			}
 
-		for (std::thread& thread: threads) {
-			if (thread.joinable()) thread.join();
+			for (std::thread& thread: threads) {
+				if (thread.joinable()) thread.join();
+			}
+
+			if (threads.size()) threads.clear();
+
+			for (auto& chunk: world_chunks) {
+				if (chunk.meshed) continue;
+				threads.push_back(std::thread(&Chunk::Render, std::ref(chunk)));
+			}
+
+			for (std::thread& thread: threads) {
+				if (thread.joinable()) thread.join();
+			}
+
+			if (threads.size()) threads.clear();
+			
 		}
+		generated = false;
 
 		for (auto& chunk: world_chunks) {
 			chunk.RenderMesh();
 		}
 
-		if (threads.size()) threads.clear();
+		render_chunks.clear();
 	}
 };

@@ -102,9 +102,9 @@ void Window::Gameloop() {
 		camera->Update(dt);
 
 		renderer->SetColor(255, 0, 255, 255);
-		world->Render();
+		world->Render((glm::ivec3)camera->cameraPos);
 
-		renderer->Render();
+		// renderer->Render();
 
 		glfwSwapBuffers(window);
 
