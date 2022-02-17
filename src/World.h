@@ -274,8 +274,8 @@ public:
 		for (int z = 0; z != 4; z++) {
 			for (int x = 0; x != 4; x++) {
 				for (int y = 0; y != 2; y++) {
-					if (!IsChunkPresent(camera_pos)) {
-						glm::ivec3 pos = glm::ivec3(camera_pos.x + x*16, y*16, camera_pos.z + z*16);
+					glm::ivec3 pos = glm::ivec3(camera_pos.x + x*16, y*16, camera_pos.z + z*16);
+					if (!IsChunkPresent(pos)) {
 						threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
 
 						glm::ivec3 id;
