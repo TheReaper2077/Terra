@@ -54,9 +54,9 @@ void Window::Init() {
 	auto REDSTONE_ORE = tile_registry->RegisterTile("REDSTONE_ORE", Tile{5*80, 1*80, 80, 80, map_sprites});
 	auto GRASS_TOP = tile_registry->RegisterTile("GRASS_TOP", Tile{2*80, 2*80, 80, 80, map_sprites});
 
-	auto GRASS_BLOCK = tile_registry->RegisterBlock("GRASS_BLOCK", BlockTiles{GRASS, GRASS, GRASS_TOP, DIRT, GRASS, GRASS});
-	auto STONE_BLOCK = tile_registry->RegisterBlock("STONE_BLOCK", BlockTiles{STONE, STONE, STONE, STONE, STONE, STONE});
-	auto DIRT_BLOCK = tile_registry->RegisterBlock("DIRT_BLOCK", BlockTiles{DIRT, DIRT, DIRT, DIRT, DIRT, DIRT});
+	tile_registry->RegisterBlock(GRASS_BLOCK, BlockTiles{GRASS, GRASS, GRASS_TOP, DIRT, GRASS, GRASS});
+	tile_registry->RegisterBlock(STONE_BLOCK, BlockTiles{STONE, STONE, STONE, STONE, STONE, STONE});
+	tile_registry->RegisterBlock(DIRT_BLOCK, BlockTiles{DIRT, DIRT, DIRT, DIRT, DIRT, DIRT});
 
 	// renderer->SetProjection(glm::ortho<float>(0, WIDTH, HEIGHT, 0, -1, 1));
 	// renderer->SetView(glm::mat4(1.0f));
@@ -79,16 +79,24 @@ void Window::Init() {
 	// 	}
 	// }
 
-	// for (int z = -16*1; z != 16*1; z++) {
-	// 	for (int x = -16*1; x != 16*1; x++) {
-	// 		world->AddBlock(Block{SOLID, STONE}, glm::ivec3(x, x + z - 1, z));
-	// 		world->AddBlock(Block{SOLID, STONE}, glm::ivec3(x, x + z - 2, z));
-	// 		world->AddBlock(Block{SOLID, STONE}, glm::ivec3(x, x + z - 3, z));
-	// 		world->AddBlock(Block{SOLID, STONE}, glm::ivec3(x, x + z - 4, z));
+	// for (int z = 0; z != 16; z++) {
+	// 	for (int x = 0; x != 16; x++) {
+	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 1, z));
+	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 2, z));
+	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 3, z));
+	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 4, z));
 	// 	}
 	// }
 
-	world->Generate();
+	// for (int z = 15*-2; z != 15*2; z++) {
+	// 	for (int x = 15*-2; x != 15*2; x++) {
+	// 		for (int y = 15*-2; y != 15*2; y++) {
+	// 			world->AddBlock(STONE_BLOCK, glm::ivec3(x, y, z));
+	// 		}
+	// 	}
+	// }
+
+	// world->Generate();
 }
 
 void Window::Gameloop() {

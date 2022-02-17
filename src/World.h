@@ -5,34 +5,27 @@
 #include "render/Renderer.h"
 #include "TileRegistry.h"
 
+// struct Block {
+// 	Faces faces;
+// 	BlockType type;
+// 	BlockID block_id;
 
-enum BlockType {
-	TRANSPARENT,
-	SOLID,
-	LIQUID
-};
+// 	Block() {
+// 		type = TRANSPARENT;
+// 		faces.reset();
+// 	}
 
-struct Block {
-	Faces faces;
-	BlockType type;
-	BlockID block_id;
+// 	Block(BlockType type, BlockID block_id) {
+// 		faces.set();
+// 		this->block_id = block_id;
+// 		this->type = type;
+// 	}
 
-	Block() {
-		type = TRANSPARENT;
-		faces.reset();
-	}
-
-	Block(BlockType type, BlockID block_id) {
-		faces.set();
-		this->block_id = block_id;
-		this->type = type;
-	}
-
-	Block(BlockType type) {
-		faces.reset();
-		this->type = type;
-	}
-};
+// 	Block(BlockType type) {
+// 		faces.reset();
+// 		this->type = type;
+// 	}
+// };
 
 class Chunk {
 	Renderer* renderer = Renderer::SharedInstance();
@@ -41,7 +34,7 @@ class Chunk {
 	std::vector<Vertex2D> mesh;
 
 public:
-	Block chunk_blocks[16][16][16];
+	BlockID chunk_blocks[16][16][16] = {AIR_BLOCK};
 	glm::ivec3 id;
 
 	bool init;
@@ -53,8 +46,6 @@ public:
 	Chunk(glm::ivec3 &chunk_id) {
 		id = chunk_id;
 		init = false;
-
-		// Generate();
 	}
 
 	void Generate() {
@@ -69,11 +60,11 @@ public:
 				for (int y = id.y; y <= value; y++) {
 					if (idx > 15) break;
 					if (y > value - 1) {
-						chunk_blocks[z][idx][x] = Block{SOLID, 0};//tile_registry->GetBlockID("GRASS_BLOCK")};
+						chunk_blocks[z][idx][x] = GRASS_BLOCK;
 					} else if (y > value - 4) {
-						chunk_blocks[z][idx][x] = Block{SOLID, 2};//tile_registry->GetBlockID("DIRT_BLOCK")};
+						chunk_blocks[z][idx][x] = DIRT_BLOCK;
 					} else {
-						chunk_blocks[z][idx][x] = Block{SOLID, 1};//tile_registry->GetBlockID("STONE_BLOCK")};
+						chunk_blocks[z][idx][x] = STONE_BLOCK;
 					}
 					idx++;
 				}
@@ -83,69 +74,150 @@ public:
 		init = true;
 	}
 
-	void Add(const glm::ivec3 &pos, Block block) {
+	void Add(const glm::ivec3 &pos, BlockID block) {
 		chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15] = block;
 		meshed = outer_mesh = inner_mesh = false;
 	}
 
-	Block &Get(const glm::ivec3 &pos) {
+	BlockID &Get(const glm::ivec3 &pos) {
 		return chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15];
 	}
 
-	Block &Get(const int &x, const int &y, const int &z) {
+	BlockID &Get(const int &x, const int &y, const int &z) {
 		return chunk_blocks[z & 15][y & 15][x & 15];
-	}
-	int quads = 0;
-
-	void Render() {
-		if (!outer_mesh) return;
-		if (meshed) return;
-		if (!inner_mesh) MeshChunk();
-
-		mesh.clear();
-		quads = 0;
-
-		for (int z = 0; z != 16; z++) {
-			for (int y = 0; y != 16; y++) {
-				for (int x = 0; x != 16; x++) {
-					const auto& block = chunk_blocks[z][y][x];
-					if (block.type == TRANSPARENT) continue;
-					quads += block.faces.count();
-
-					// renderer->TextureCube(id.x + x, id.y + y, id.z + z, 1, 1, 1, tile_registry->GetTile(block.tile_id), block.faces, mesh);
-					renderer->TextureCube(id.x + x, id.y + y, id.z + z, 1, 1, 1, block.block_id, block.faces, mesh);
-				}
-			}
-		}
-
-		std::printf("%i, %i, %i\n", quads, mesh.size(), std::this_thread::get_id());
-		meshed = true;
-		inner_mesh = true;
 	}
 
 	void RenderMesh() {
 		renderer->RenderMesh(mesh);
 	}
 
-	void MeshChunk() {
+	void DrawQuad(float x, float y, float z, float w, float h, float d, const TileID &tile_id, int dir) {
+		auto& tile = tile_registry->GetTile(tile_id);
+		float index = renderer->GetTextureIndex(&tile.texture);
+
+		mesh.reserve(mesh.size() + 4);
+		
+		if (dir == 0) {
+			mesh.emplace_back(Vertex2D{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z, tile.tx + tile.tw, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tile.tx, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		}
+		if (dir == 1) {
+			mesh.emplace_back(Vertex2D{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tile.tx, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tile.tx, tile.ty + tile.th, index});
+		}
+		if (dir == 3) {
+			mesh.emplace_back(Vertex2D{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
+			mesh.emplace_back(Vertex2D{x, y, z + d, tile.tx + tile.tw, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tile.tx, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		}
+		if (dir == 2) {
+			mesh.emplace_back(Vertex2D{x, y + h, z, tile.tx + tile.tw, tile.ty + tile.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tile.tx, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tile.tx, tile.ty + tile.th, index});
+		}
+		if (dir == 4) {
+			mesh.emplace_back(Vertex2D{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x, y + h, z, tile.tx, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x, y, z, tile.tx, tile.ty + tile.th, index});
+		}
+		if (dir == 5) {
+			mesh.emplace_back(Vertex2D{x + w, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y + h, z, tile.tx, tile.ty, index});
+			mesh.emplace_back(Vertex2D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		}
+	}
+
+	void MeshChunk(Chunk *front, Chunk *back, Chunk *top, Chunk *bottom, Chunk *left, Chunk *right) {
+		mesh.clear();
+		meshed = true;
+		
 		for (int z = 0; z != 16; z++) {
 			for (int y = 0; y != 16; y++) {
 				for (int x = 0; x != 16; x++) {
 					auto& block = chunk_blocks[z][y][x];
-					if (block.type == TRANSPARENT) continue;
+					if (block == AIR_BLOCK) continue;
 
-					if (z - 1 >= 0) block.faces[0] = (chunk_blocks[z - 1][y][x].type == TRANSPARENT);
-					if (z + 1 < 16) block.faces[1] = (chunk_blocks[z + 1][y][x].type == TRANSPARENT);
+					auto& tiles = tile_registry->GetBlock(block);
 
-					if (y - 1 >= 0) block.faces[3] = (chunk_blocks[z][y - 1][x].type == TRANSPARENT);
-					if (y + 1 < 16) block.faces[2] = (chunk_blocks[z][y + 1][x].type == TRANSPARENT);
+					if (z - 1 >= 0) {
+						if (chunk_blocks[z - 1][y][x] == AIR_BLOCK) {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.front, 0);
+						}
+					} else {
+						if (front != nullptr) {
+							if (front->chunk_blocks[15][y][x] == AIR_BLOCK) {
+								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.front, 0);
+							}
+						}
+					}
+					if (z + 1 < 16) {
+						if (chunk_blocks[z + 1][y][x] == AIR_BLOCK) {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.back, 1);
+						}
+					} else {
+						if (back != nullptr) {
+							if (back->chunk_blocks[0][y][x] == AIR_BLOCK) {
+								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.back, 1);
+							}
+						}
+					}
 
-					if (x - 1 >= 0) block.faces[4] = (chunk_blocks[z][y][x - 1].type == TRANSPARENT);
-					if (x + 1 < 16) block.faces[5] = (chunk_blocks[z][y][x + 1].type == TRANSPARENT);
+					if (y - 1 >= 0) {
+						if (chunk_blocks[z][y - 1][x] == AIR_BLOCK) {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.bottom, 3);
+						}
+					} else {
+						if (bottom != nullptr) {
+							if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK) {
+								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.bottom, 3);
+							}
+						}
+					}
+					if (y + 1 < 16) {
+						if (chunk_blocks[z][y + 1][x] == AIR_BLOCK) {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.top, 2);
+						}
+					} else {
+						if (top != nullptr) {
+							if (top->chunk_blocks[z][0][x] == AIR_BLOCK) {
+								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.top, 2);
+							}
+						}
+					}
+
+					if (x - 1 >= 0) {
+						if (chunk_blocks[z][y][x - 1] == AIR_BLOCK) {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 4);
+						}
+					} else {
+						if (left != nullptr) {
+							if (left->chunk_blocks[z][y][15] == AIR_BLOCK) {
+								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 4);
+							}
+						}
+					}
+					if (x + 1 < 16) {
+						if (chunk_blocks[z][y][x + 1] == AIR_BLOCK) {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.right, 5);
+						}
+					} else {
+						if (right != nullptr) {
+							if (right->chunk_blocks[z][y][0] == AIR_BLOCK) {
+								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 5);
+							}
+						}
+					}
 				}
 			}
 		}
-
 	}
 };
 
@@ -169,7 +241,7 @@ public:
 		return world_chunks[chunk_id_map[chunk_id]];
 	}
 
-	void AddBlock(Block block, glm::ivec3 pos) {
+	void AddBlock(BlockID block, glm::ivec3 pos) {
 		GetChunk(pos).Add(pos, block);
 	}
 
@@ -178,161 +250,84 @@ public:
 	}
 
 	bool IsChunkPresent(const glm::ivec3 &pos) {
-		return (chunk_id_map.find(pos) != chunk_id_map.end());
+		return (chunk_id_map.find(pos & ~15) != chunk_id_map.end());
 	}
 
 	void Generate() {
-		for (int z = -10; z != 10; z++) {
+		for (int z = -4; z != 4; z++) {
 			for (int y = 0; y != 4; y++) {
-				for (int x = -10; x != 10; x++) {
+				for (int x = -4; x != 4; x++) {
 					GetChunk(glm::ivec3(x*16, y*16, z*16)).Generate();
 				}
 			}
 		}
-
-		generated = true;
 	}
 
-	void Meshing(Chunk *chunk) {
-		if (chunk->outer_mesh) return;
-		std::printf("[MESH] (%i, %i, %i)\n", chunk->id.x, chunk->id.y, chunk->id.z);
+	Chunk *GetChunkPtr(const glm::ivec3 &id) {
+		if (IsChunkPresent(id)) {
+			return &GetChunk(id);
+		}
+		return nullptr;
+	}
 
-		for (int z = 0; z != 16; z++) {
-			for (int y = 0; y != 16; y++) {
-				for (int x = 0; x != 16; x++) {
-					// if ((z - 1 < 0 || z + 1 >= 16 || y - 1 < 0 || y + 1 >= 16 || x - 1 < 0 || x + 1 >= 16)) {
-						auto& block = chunk->chunk_blocks[z][y][x];
+	void Render(const glm::ivec3 &camera_pos) {
+		for (int z = 0; z != 4; z++) {
+			for (int x = 0; x != 4; x++) {
+				for (int y = 0; y != 2; y++) {
+					if (!IsChunkPresent(camera_pos)) {
+						glm::ivec3 pos = glm::ivec3(camera_pos.x + x*16, y*16, camera_pos.z + z*16);
+						threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
 
-						if (block.type != TRANSPARENT) {
-							if (z - 1 < 0) {
-								auto id = glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z - 16);
-								if (IsChunkPresent(id)) {
-									block.faces[0] = (world_chunks[chunk_id_map[id]].chunk_blocks[15][y][x].type == TRANSPARENT);
-								} else {
-									block.faces[0] = true;
-								}
-							}
-							if (z + 1 >= 16) {
-								auto id = glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z + 16);
-								if (IsChunkPresent(id)) {
-									block.faces[1] = (world_chunks[chunk_id_map[id]].chunk_blocks[0][y][x].type == TRANSPARENT);
-								} else {
-									block.faces[1] = true;
-								}
-							}
+						glm::ivec3 id;
 
-							if (y - 1 < 0) {
-								auto id = glm::ivec3(chunk->id.x, chunk->id.y - 16, chunk->id.z);
-								if (IsChunkPresent(id)) {
-									block.faces[3] = (world_chunks[chunk_id_map[id]].chunk_blocks[z][15][x].type == TRANSPARENT);
-								} else {
-									block.faces[3] = true;
-								}
-							}
-							if (y + 1 >= 16) {
-								auto id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z);
-								if (IsChunkPresent(id)) {
-									block.faces[2] = (world_chunks[chunk_id_map[id]].chunk_blocks[z][0][x].type == TRANSPARENT);
-								} else {
-									block.faces[2] = true;
-								}
-							}
-
-							if (x - 1 < 0) {
-								auto id = glm::ivec3(chunk->id.x - 16, chunk->id.y, chunk->id.z);
-								if (IsChunkPresent(id)) {
-									block.faces[4] = (world_chunks[chunk_id_map[id]].chunk_blocks[z][y][15].type == TRANSPARENT);
-								} else {
-									block.faces[4] = true;
-								}
-							}
-							if (x + 1 >= 16) {
-								auto id = glm::ivec3(chunk->id.x + 16, chunk->id.y, chunk->id.z);
-								if (IsChunkPresent(id)) {
-									block.faces[5] = (world_chunks[chunk_id_map[id]].chunk_blocks[z][y][0].type == TRANSPARENT);
-								} else {
-									block.faces[5] = true;
-								}
-							}
+						id = glm::ivec3(pos.x - 16, pos.y, pos.z);
+						if (IsChunkPresent(id)) {
+							GetChunk(id).meshed = false;
 						}
-					// }
+						id = glm::ivec3(pos.x + 16, pos.y, pos.z);
+						if (IsChunkPresent(id)) {
+							GetChunk(id).meshed = false;
+						}
+						id = glm::ivec3(pos.x, pos.y, pos.z - 16);
+						if (IsChunkPresent(id)) {
+							GetChunk(id).meshed = false;
+						}
+						id = glm::ivec3(pos.x, pos.y, pos.z + 16);
+						if (IsChunkPresent(id)) {
+							GetChunk(id).meshed = false;
+						}
+					}
 				}
 			}
 		}
-		chunk->outer_mesh = true;
-		chunk->meshed = false;
-	}
 
-	bool generated = false;
-	std::vector<glm::ivec3> temp_vec;
-
-	void Render(const glm::ivec3 &camera_pos) {
-		// for (int z = -5; z != 5; z++) {
-		// 	for (int x = -5; x != 5; x++) {
-		// 		for (int y = 0; y != 2; y++) {
-		// 			auto pos = glm::ivec3((camera_pos.x & ~15) + x*16, y*16, (camera_pos.z & ~15) + z*16);
-		// 			if (!IsChunkPresent(pos)) {
-		// 				generated = true;
-		// 				// temp_vec.push_back(pos);
-		// 				threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
-		// 				// render_chunks.push_back(&GetChunk(pos));
-		// 				glm::ivec3 id;
-		// 				id = glm::ivec3(pos.x - 16, pos.y, pos.z);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).outer_mesh = false;
-		// 				}
-		// 				id = glm::ivec3(pos.x + 16, pos.y, pos.z);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).outer_mesh = false;
-		// 				}
-		// 				id = glm::ivec3(pos.x, pos.y, pos.z - 16);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).outer_mesh = false;
-		// 				}
-		// 				id = glm::ivec3(pos.x, pos.y, pos.z + 16);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).outer_mesh = false;
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
-		
-		if (generated) {
-			for (std::thread& thread: threads) {
-				if (thread.joinable()) thread.join();
-			}
-			if (threads.size()) threads.clear();
-			
-			for (auto& chunk: world_chunks) {
-				if (chunk.outer_mesh) continue;
-				threads.push_back(std::thread(&World::Meshing, this, &chunk));
-			}
-
-			for (std::thread& thread: threads) {
-				if (thread.joinable()) thread.join();
-			}
-
-			if (threads.size()) threads.clear();
-
-			for (auto& chunk: world_chunks) {
-				if (chunk.meshed) continue;
-				threads.push_back(std::thread(&Chunk::Render, std::ref(chunk)));
-			}
-
-			for (std::thread& thread: threads) {
-				if (thread.joinable()) thread.join();
-			}
-
-			if (threads.size()) threads.clear();
-			
+		for (std::thread& thread: threads) {
+			if (thread.joinable()) thread.join();
 		}
-		generated = false;
+
+		if (threads.size()) threads.clear();
+
+		for (auto& chunk: world_chunks) {
+			if (chunk.meshed) continue;
+
+			auto* front = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z - 16));
+			auto* back = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z + 16));
+			auto* top = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y + 16, chunk.id.z));
+			auto* bottom = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y - 16, chunk.id.z));
+			auto* left = GetChunkPtr(glm::ivec3(chunk.id.x - 16, chunk.id.y, chunk.id.z));
+			auto* right = GetChunkPtr(glm::ivec3(chunk.id.x + 16, chunk.id.y, chunk.id.z));
+			
+			threads.push_back(std::thread(&Chunk::MeshChunk, std::ref(chunk), front, back, top, bottom, left, right));
+		}
+
+		for (std::thread& thread: threads) {
+			if (thread.joinable()) thread.join();
+		}
+
+		if (threads.size()) threads.clear();
 
 		for (auto& chunk: world_chunks) {
 			chunk.RenderMesh();
 		}
-
-		render_chunks.clear();
 	}
 };

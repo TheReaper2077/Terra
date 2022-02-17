@@ -5,7 +5,13 @@
 #include "Components/Components.h"
 
 using TileID = uint32_t;
-using BlockID = uint32_t;
+
+enum BlockID {
+	AIR_BLOCK,
+	GRASS_BLOCK,
+	STONE_BLOCK,
+	DIRT_BLOCK,
+};
 
 struct Tile {
 	float x, y, w, h;
@@ -42,9 +48,9 @@ private:
 	std::vector<Tile> tile_array;
 	std::map<std::string, TileID> tile_registry_map;
 
-	BlockID next_block_id = 0;
+	unsigned int next_block_id_index;
+	std::map<BlockID, unsigned int> block_registry_map;
 	std::vector<BlockTiles> block_array;
-	std::map<std::string, BlockID> block_registry_map;
 
 	TileRegistry() {}
 
@@ -61,11 +67,9 @@ public:
 		return next_tile_id++;
 	}
 
-	BlockID RegisterBlock(const std::string &name, const BlockTiles block_tiles) {
-		block_registry_map[name] = next_block_id;
+	void RegisterBlock(const BlockID &id, const BlockTiles block_tiles) {
+		block_registry_map[id] = next_block_id_index++;
 		block_array.push_back(block_tiles);
-
-		return next_block_id++;
 	}
 
 	Tile &GetTile(const TileID &tile_id) {
@@ -73,11 +77,7 @@ public:
 	}
 
 	BlockTiles &GetBlock(const BlockID &block_id) {
-		return block_array[block_id];
-	}
-
-	BlockID &GetBlockID(const std::string &name) {
-		return block_registry_map[name];
+		return block_array[block_registry_map[block_id]];
 	}
 
 	void Render() {

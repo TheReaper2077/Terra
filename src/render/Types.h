@@ -6,12 +6,12 @@ struct Vertex2D {
 	float pos[3];
 	float color[4];
 
-	Vertex2D(float x, float y, float *color, float tx, float ty, float tex_index) {
+	Vertex2D(float x, float y, float tx, float ty, float tex_index) {
 		setPos(x, y, 0);
 		setColor(tx, ty, tex_index, 0);
 	}
 
-	Vertex2D(float x, float y, float z, float *color, float tx, float ty, float tex_index) {
+	Vertex2D(float x, float y, float z, float tx, float ty, float tex_index) {
 		setPos(x, y, z);
 		setColor(tx, ty, tex_index, 0);
 	}
