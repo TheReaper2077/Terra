@@ -97,6 +97,15 @@ void Window::Init() {
 	// }
 
 	// world->Generate();
+	// int idx = 0;
+	// for (int z = 0; z != 16; z++) {
+	// 	for (int x = 0; x != 16; x++) {
+	// 		for (int y = 0; y != 16; y++) if (y == 15) idx++;
+	// 	}
+	// }
+
+	// std::cout << idx << " " << 16*16;
+	// exit(0);
 }
 
 void Window::Gameloop() {
@@ -110,9 +119,11 @@ void Window::Gameloop() {
 		camera->Update(dt);
 
 		renderer->SetColor(255, 0, 255, 255);
+
+		// world->Update(dt, camera->cameraPos);
 		world->Render((glm::ivec3)camera->cameraPos);
 
-		// renderer->Render();
+		renderer->Render();
 
 		glfwSwapBuffers(window);
 

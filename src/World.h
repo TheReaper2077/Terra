@@ -42,6 +42,7 @@ public:
 	bool inner_mesh = false;
 	bool outer_mesh = false;
 	bool top_chunk = false;
+	bool visible = true;
 
 	Chunk(glm::ivec3 &chunk_id) {
 		id = chunk_id;
@@ -49,16 +50,20 @@ public:
 	}
 
 	void Generate() {
+		int t = 0;
 		for (int z = 0; z != 16; z++) {
 			for (int x = 0; x != 16; x++) {
 				float value = glm::simplex(glm::vec2{(id.x + x) / 64.0, (id.z + z) / 64.0});
 				value = (value + 1) / 2;
-				value *= 32 + 32;
+				value *= 16 + 16;
 
-				int idx = 0;
-				
+				int idx = 0;				
 				for (int y = id.y; y <= value; y++) {
-					if (idx > 15) break;
+					if (idx > 15) {
+						break;
+						t++;
+					}
+
 					if (y > value - 1) {
 						chunk_blocks[z][idx][x] = GRASS_BLOCK;
 					} else if (y > value - 4) {
@@ -72,6 +77,7 @@ public:
 		}
 
 		init = true;
+		visible = (t <= 256);
 	}
 
 	void Add(const glm::ivec3 &pos, BlockID block) {
@@ -88,7 +94,7 @@ public:
 	}
 
 	void RenderMesh() {
-		renderer->RenderMesh(mesh);
+		if (visible) renderer->RenderMesh(mesh);
 	}
 
 	void DrawQuad(float x, float y, float z, float w, float h, float d, const TileID &tile_id, int dir) {
@@ -270,12 +276,95 @@ public:
 		return nullptr;
 	}
 
+	bool generated = false;
+	std::vector<glm::ivec3> chunk_render_id;
+
+
+	double total_time = 0;
+	int n = 0, iter = 0, s = 0, r = 0;
+
+	void Update(double &dt, const glm::ivec3 &camera_pos) {
+		if (total_time > 30) {
+
+			if (iter <= n) r = iter;
+			if (iter > n) s--;
+
+			std::cout << r << " " << s << "\n";
+
+			glm::ivec3 pos = glm::ivec3(r*16, 0*16, s*16);
+			if (!IsChunkPresent(pos)) {
+				generated = true;
+				threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
+
+				glm::ivec3 id;
+
+				id = glm::ivec3(pos.x - 16, pos.y, pos.z);
+				if (IsChunkPresent(id)) {
+					GetChunk(id).meshed = false;
+				}
+				id = glm::ivec3(pos.x + 16, pos.y, pos.z);
+				if (IsChunkPresent(id)) {
+					GetChunk(id).meshed = false;
+				}
+				id = glm::ivec3(pos.x, pos.y, pos.z - 16);
+				if (IsChunkPresent(id)) {
+					GetChunk(id).meshed = false;
+				}
+				id = glm::ivec3(pos.x, pos.y, pos.z + 16);
+				if (IsChunkPresent(id)) {
+					GetChunk(id).meshed = false;
+				}
+			}
+
+			if (generated) {
+				for (std::thread& thread: threads) {
+					if (thread.joinable()) thread.join();
+				}
+
+				if (threads.size()) threads.clear();
+
+				for (auto& chunk: world_chunks) {
+					if (chunk.meshed) continue;
+
+					auto* front = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z - 16));
+					auto* back = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z + 16));
+					auto* top = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y + 16, chunk.id.z));
+					auto* bottom = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y - 16, chunk.id.z));
+					auto* left = GetChunkPtr(glm::ivec3(chunk.id.x - 16, chunk.id.y, chunk.id.z));
+					auto* right = GetChunkPtr(glm::ivec3(chunk.id.x + 16, chunk.id.y, chunk.id.z));
+					
+					threads.push_back(std::thread(&Chunk::MeshChunk, std::ref(chunk), front, back, top, bottom, left, right));
+				}
+
+				for (std::thread& thread: threads) {
+					if (thread.joinable()) thread.join();
+				}
+
+				if (threads.size()) threads.clear();
+			}
+
+			chunk_render_id.push_back(pos);
+			
+			if (iter == 2*n) {
+				n++;
+				iter = 0;
+				r = 0;
+				s = n;
+			} else {iter++;}
+
+			
+			total_time = 0;
+		}
+		total_time += dt;
+	}
+
 	void Render(const glm::ivec3 &camera_pos) {
-		for (int z = 0; z != 4; z++) {
-			for (int x = 0; x != 4; x++) {
-				for (int y = 0; y != 2; y++) {
-					glm::ivec3 pos = glm::ivec3(camera_pos.x + x*16, y*16, camera_pos.z + z*16);
+		for (int z = -8; z != 8; z++) {
+			for (int x = -8; x != 8; x++) {
+				for (int y = 0; y != 4; y++) {
+					glm::ivec3 pos = glm::ivec3((camera_pos.x & ~15) + x*16, y*16, (camera_pos.z & ~15) + z*16);
 					if (!IsChunkPresent(pos)) {
+						generated = true;
 						threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
 
 						glm::ivec3 id;
@@ -297,37 +386,23 @@ public:
 							GetChunk(id).meshed = false;
 						}
 					}
+
+					chunk_render_id.push_back(pos);
 				}
 			}
 		}
 
-		for (std::thread& thread: threads) {
-			if (thread.joinable()) thread.join();
-		}
+		
 
-		if (threads.size()) threads.clear();
-
-		for (auto& chunk: world_chunks) {
-			if (chunk.meshed) continue;
-
-			auto* front = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z - 16));
-			auto* back = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z + 16));
-			auto* top = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y + 16, chunk.id.z));
-			auto* bottom = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y - 16, chunk.id.z));
-			auto* left = GetChunkPtr(glm::ivec3(chunk.id.x - 16, chunk.id.y, chunk.id.z));
-			auto* right = GetChunkPtr(glm::ivec3(chunk.id.x + 16, chunk.id.y, chunk.id.z));
-			
-			threads.push_back(std::thread(&Chunk::MeshChunk, std::ref(chunk), front, back, top, bottom, left, right));
-		}
-
-		for (std::thread& thread: threads) {
-			if (thread.joinable()) thread.join();
-		}
-
-		if (threads.size()) threads.clear();
+		// for (auto& chunk_id: chunk_render_id) {
+		// 	// chunk->RenderMesh();
+		// 	world_chunks[chunk_id_map[chunk_id]].RenderMesh();
+		// }
 
 		for (auto& chunk: world_chunks) {
 			chunk.RenderMesh();
 		}
+
+		chunk_render_id.clear();
 	}
 };
