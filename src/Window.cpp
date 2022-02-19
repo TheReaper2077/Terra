@@ -120,7 +120,7 @@ void Window::Gameloop() {
 
 		renderer->SetColor(255, 0, 255, 255);
 
-		// world->Update(dt, camera->cameraPos);
+		world->Update(dt, camera->cameraPos);
 		world->Render((glm::ivec3)camera->cameraPos);
 
 		renderer->Render();
