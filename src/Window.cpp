@@ -96,7 +96,11 @@ void Window::Init() {
 	// 	}
 	// }
 
-	// world->Generate();
+				// threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
+	// world->GenerateChunk(glm::ivec3(16, 0, 0));
+	// world->GenerateChunk(glm::ivec3(0, 0, 0));
+	// world->GenerateChunk(glm::ivec3(16, 0, 16));
+	// world->GenerateChunk(glm::ivec3(0, 0, 16));
 	// int idx = 0;
 	// for (int z = 0; z != 16; z++) {
 	// 	for (int x = 0; x != 16; x++) {

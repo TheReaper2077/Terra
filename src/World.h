@@ -42,7 +42,7 @@ public:
 	bool inner_mesh = false;
 	bool outer_mesh = false;
 	bool top_chunk = false;
-	bool visible = true;
+	bool visible = false;
 
 	Chunk(glm::ivec3 &chunk_id) {
 		id = chunk_id;
@@ -50,41 +50,47 @@ public:
 	}
 
 	void Generate() {
-		// int t = 0;
-		// for (int z = 0; z != 16; z++) {
-		// 	for (int x = 0; x != 16; x++) {
-		// 		float value = glm::simplex(glm::vec2{(id.x + x) / 64.0, (id.z + z) / 64.0});
-		// 		value = (value + 1) / 2;
-		// 		value *= 16 + 16;
+		int t = 0;
+		for (int z = 0; z != 16; z++) {
+			for (int x = 0; x != 16; x++) {
+				float value = glm::simplex(glm::vec2{(id.x + x) / 64.0, (id.z + z) / 64.0});
+				value = (value + 1) / 2;
+				value *= 16 + 16;
 
-		// 		int idx = 0;				
-		// 		for (int y = id.y; y <= value; y++) {
-		// 			if (idx > 15) {
-		// 				break;
-		// 				t++;
-		// 			}
+				int idx = 0;				
+				for (int y = id.y; y <= value; y++) {
+					if (idx > 15) {
+						t++;
+						break;
+					}
 
-		// 			if (y > value - 1) {
-		// 				chunk_blocks[z][idx][x] = GRASS_BLOCK;
-		// 			} else if (y > value - 4) {
-		// 				chunk_blocks[z][idx][x] = DIRT_BLOCK;
-		// 			} else {
-		// 				chunk_blocks[z][idx][x] = STONE_BLOCK;
-		// 			}
-		// 			idx++;
-		// 		}
-		// 	}
-		// }
-
-		// init = true;
-		// visible = (t <= 256);
-		for (int z = 0; z != 10; z++) {
-			for (int x = 0; x != 10; x++) {
-				for (int y = 0; y != 10; y++) {
-					chunk_blocks[z][y][x] = GRASS_BLOCK;
+					if (y > value - 1) {
+						chunk_blocks[z][idx][x] = GRASS_BLOCK;
+						visible = true;
+					} else if (y > value - 4) {
+						chunk_blocks[z][idx][x] = DIRT_BLOCK;
+						visible = true;
+					} else {
+						chunk_blocks[z][idx][x] = STONE_BLOCK;
+						visible = true;
+					}
+					idx++;
 				}
 			}
 		}
+
+		init = true;
+		if (visible) visible = (t < 256);
+		// if (visible == false) {
+		// 	std::cout << "jsakhfsda\n";
+		// }
+		// for (int z = 0; z != 10; z++) {
+		// 	for (int x = 0; x != 10; x++) {
+		// 		for (int y = 0; y != 10; y++) {
+		// 			chunk_blocks[z][y][x] = GRASS_BLOCK;
+		// 		}
+		// 	}
+		// }
 	}
 
 	void Add(const glm::ivec3 &pos, BlockID block) {
@@ -101,7 +107,13 @@ public:
 	}
 
 	void RenderMesh() {
-		if (visible) renderer->RenderMesh(mesh);
+		if (!mesh.size()) return;
+		if (visible) {
+			renderer->RenderMesh(mesh);
+		}
+		// else
+		// renderer->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
+		renderer->DrawCube(id, 16, 16, 16);
 	}
 
 	void DrawQuad(float x, float y, float z, float w, float h, float d, const TileID &tile_id, int dir) {
@@ -168,7 +180,10 @@ public:
 						if (front != nullptr) {
 							if (front->chunk_blocks[15][y][x] == AIR_BLOCK) {
 								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.front, 0);
+								visible = true;
 							}
+						} else {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.front, 0);
 						}
 					}
 					if (z + 1 < 16) {
@@ -179,7 +194,10 @@ public:
 						if (back != nullptr) {
 							if (back->chunk_blocks[0][y][x] == AIR_BLOCK) {
 								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.back, 1);
+								visible = true;
 							}
+						} else {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.back, 1);
 						}
 					}
 
@@ -191,7 +209,10 @@ public:
 						if (bottom != nullptr) {
 							if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK) {
 								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.bottom, 3);
+								visible = true;
 							}
+						} else {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.bottom, 3);
 						}
 					}
 					if (y + 1 < 16) {
@@ -202,7 +223,10 @@ public:
 						if (top != nullptr) {
 							if (top->chunk_blocks[z][0][x] == AIR_BLOCK) {
 								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.top, 2);
+								visible = true;
 							}
+						} else {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.top, 2);
 						}
 					}
 
@@ -214,7 +238,10 @@ public:
 						if (left != nullptr) {
 							if (left->chunk_blocks[z][y][15] == AIR_BLOCK) {
 								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 4);
+								visible = true;
 							}
+						} else {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 4);
 						}
 					}
 					if (x + 1 < 16) {
@@ -225,12 +252,17 @@ public:
 						if (right != nullptr) {
 							if (right->chunk_blocks[z][y][0] == AIR_BLOCK) {
 								DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 5);
+								visible = true;
 							}
+						} else {
+							DrawQuad(id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 5);
 						}
 					}
 				}
 			}
 		}
+
+		visible = (mesh.size() > 0);
 	}
 };
 
@@ -266,14 +298,32 @@ public:
 		return (chunk_id_map.find(pos & ~15) != chunk_id_map.end());
 	}
 
-	void Generate() {
-		for (int z = -4; z != 4; z++) {
-			for (int y = 0; y != 4; y++) {
-				for (int x = -4; x != 4; x++) {
-					GetChunk(glm::ivec3(x*16, y*16, z*16)).Generate();
+	void GenerateChunk(const glm::ivec3 &pos) {
+		// for (int z = -4; z != 4; z++) {
+		// 	for (int y = 0; y != 4; y++) {
+		// 		for (int x = -4; x != 4; x++) {
+		// 			GetChunk(glm::ivec3(x*16, y*16, z*16)).Generate();
+		// 		}
+		// 	}
+		// }
+		for (int z = pos.z; z != pos.z + 16; z++) {
+			for (int x = pos.x; x != pos.x + 16; x++) {
+				float value = glm::simplex(glm::vec2{x / 64.0, z / 64.0});
+				value = (value + 1) / 2;
+				value *= 32 + 32;
+				for (int y = 0; y <= value; y++) {
+					if (y > value - 1) {
+						AddBlock(GRASS_BLOCK, glm::ivec3(x, y, z));
+					} else if (y > value - 4) {
+						AddBlock(DIRT_BLOCK, glm::ivec3(x, y, z));
+					} else {
+						AddBlock(STONE_BLOCK, glm::ivec3(x, y, z));
+					}
 				}
 			}
 		}
+
+		generated = true;
 	}
 
 	Chunk *GetChunkPtr(const glm::ivec3 &id) {
@@ -293,7 +343,8 @@ public:
 	void Generate(std::vector<glm::ivec3> positions) {
 		for (const auto& pos: positions) {
 			if (!IsChunkPresent(pos)) {
-				threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
+				// threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
+				threads.push_back(std::thread(&World::GenerateChunk, this, pos));
 
 				glm::ivec3 id;
 
@@ -313,20 +364,28 @@ public:
 				if (IsChunkPresent(id)) {
 					GetChunk(id).meshed = false;
 				}
-			}
+				id = glm::ivec3(pos.x, pos.y - 16, pos.z);
+				if (IsChunkPresent(id)) {
+					GetChunk(id).meshed = false;
+				}
+				id = glm::ivec3(pos.x, pos.y + 16, pos.z);
+				if (IsChunkPresent(id)) {
+					GetChunk(id).meshed = false;
+				}
 
-			chunk_render_id.push_back(pos);
+				generated = true;
+			}
 		}
+
+		for (std::thread& thread: threads) {
+			if (thread.joinable()) thread.join();
+		}
+
+		if (threads.size()) threads.clear();
 	}
 
-	void Threads() {
+	void Mesh() {
 		if (generated) {
-			for (std::thread& thread: threads) {
-				if (thread.joinable()) thread.join();
-			}
-
-			if (threads.size()) threads.clear();
-
 			for (auto& chunk: world_chunks) {
 				if (chunk.meshed) continue;
 
@@ -353,22 +412,20 @@ public:
 
 	void Update(double &dt, const glm::ivec3 &camera_pos) {
 		if (total_time > last_gen_time) {
-
-			if (iter <= n) r = iter;
-			if (iter > n) s--;
-
-			std::cout << r << " " << s << "\n";
-
-			Generate({glm::ivec3(r*16, 0*16, s*16), glm::ivec3(-s*16, 0*16, r*16), glm::ivec3(s*16, 0*16, -r*16), glm::ivec3(-r*16, 0*16, -s*16)});
-			generated = true;
-			Threads();
-			
-			if (iter == 2*n) {
+			if (iter == 2*n + 1) {
 				n++;
 				iter = 0;
 				r = 0;
 				s = n;
-			} else {iter++;}
+			} else iter++;
+
+			if (iter - 1 <= n) r = iter - 1;
+			if (iter - 1 > n) s--;
+
+			Generate({
+				glm::ivec3(r*16, 0*16, s*16), glm::ivec3(-s*16, 0*16, r*16), glm::ivec3(s*16, 0*16, -r*16), glm::ivec3(-r*16, 0*16, -s*16)
+			});
+			Mesh();			
 
 			last_gen_time = total_time;
 			total_time = 0;
@@ -377,74 +434,18 @@ public:
 	}
 
 	void Render(const glm::ivec3 &camera_pos) {
-		// for (int z = -8; z != 8; z++) {
-		// 	for (int x = -8; x != 8; x++) {
-		// 		for (int y = 0; y != 4; y++) {
-		// 			glm::ivec3 pos = glm::ivec3((camera_pos.x & ~15) + x*16, y*16, (camera_pos.z & ~15) + z*16);
-		// 			if (!IsChunkPresent(pos)) {
-		// 				generated = true;
-		// 				threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
+		if (generated) Mesh();
 
-		// 				glm::ivec3 id;
-
-		// 				id = glm::ivec3(pos.x - 16, pos.y, pos.z);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).meshed = false;
-		// 				}
-		// 				id = glm::ivec3(pos.x + 16, pos.y, pos.z);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).meshed = false;
-		// 				}
-		// 				id = glm::ivec3(pos.x, pos.y, pos.z - 16);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).meshed = false;
-		// 				}
-		// 				id = glm::ivec3(pos.x, pos.y, pos.z + 16);
-		// 				if (IsChunkPresent(id)) {
-		// 					GetChunk(id).meshed = false;
-		// 				}
-		// 			}
-
-		// 			chunk_render_id.push_back(pos);
-		// 		}
-		// 	}
-		// }
-
-		// if (generated) {
-		// 	for (std::thread& thread: threads) {
-		// 		if (thread.joinable()) thread.join();
-		// 	}
-
-		// 	if (threads.size()) threads.clear();
-
-		// 	for (auto& chunk: world_chunks) {
-		// 		if (chunk.meshed) continue;
-
-		// 		auto* front = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z - 16));
-		// 		auto* back = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y, chunk.id.z + 16));
-		// 		auto* top = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y + 16, chunk.id.z));
-		// 		auto* bottom = GetChunkPtr(glm::ivec3(chunk.id.x, chunk.id.y - 16, chunk.id.z));
-		// 		auto* left = GetChunkPtr(glm::ivec3(chunk.id.x - 16, chunk.id.y, chunk.id.z));
-		// 		auto* right = GetChunkPtr(glm::ivec3(chunk.id.x + 16, chunk.id.y, chunk.id.z));
-				
-		// 		threads.push_back(std::thread(&Chunk::MeshChunk, std::ref(chunk), front, back, top, bottom, left, right));
-		// 	}
-
-		// 	for (std::thread& thread: threads) {
-		// 		if (thread.joinable()) thread.join();
-		// 	}
-
-		// 	if (threads.size()) threads.clear();
-		// 	generated = false;
-		// }
-
-		// for (auto& chunk_id: chunk_render_id) {
-		// 	// chunk->RenderMesh();
-		// 	world_chunks[chunk_id_map[chunk_id]].RenderMesh();
-		// }
-
-		for (auto& chunk: world_chunks) {
-			chunk.RenderMesh();
+		for (int z = -12; z != 12; z++) {
+			for (int x = -12; x != 12; x++) {
+				int y = 0;
+				while (true) {
+					auto pos = glm::ivec3((camera_pos.x & ~15) - x*16, y*16, (camera_pos.z & ~15) - z*16);
+					if (IsChunkPresent(pos)) GetChunk(pos).RenderMesh();
+					else break;
+					y++;
+				}
+			}
 		}
 
 		chunk_render_id.clear();

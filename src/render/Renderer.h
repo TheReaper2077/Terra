@@ -13,7 +13,7 @@ enum RenderType {
 	LINE, POINT,
 	FILL_TRIANGLE, DRAW_TRIANGLE,
 	TEXTURE_RECT, FILL_RECT, DRAW_RECT,
-	TEXTURE_CUBE
+	TEXTURE_CUBE, DRAW_CUBE
 };
 
 
@@ -255,6 +255,47 @@ private:
 		this->render_type = render_type;
 	}
 
+	void RenderCube(float x, float y, float z, float w, float h, float d, RenderType render_type) {
+		if (this->render_type != render_type) {
+			Render();
+		}
+
+		curr_quads += 6;
+		vertices.reserve(vertices.size() + 4*6);
+		
+		vertices.emplace_back(Vertex2D{x, y, z, color});
+		vertices.emplace_back(Vertex2D{x, y + h, z, color});
+		vertices.emplace_back(Vertex2D{x + w, y + h, z, color});
+		vertices.emplace_back(Vertex2D{x + w, y, z, color});
+		
+		vertices.emplace_back(Vertex2D{x, y, z + d, color});
+		vertices.emplace_back(Vertex2D{x, y + h, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y + h, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y, z + d, color});
+		
+		vertices.emplace_back(Vertex2D{x, y + h, z, color});
+		vertices.emplace_back(Vertex2D{x, y + h, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y + h, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y + h, z, color});
+		
+		vertices.emplace_back(Vertex2D{x, y, z, color});
+		vertices.emplace_back(Vertex2D{x, y, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y, z, color});
+		
+		vertices.emplace_back(Vertex2D{x, y, z + d, color});
+		vertices.emplace_back(Vertex2D{x, y + h, z + d, color});
+		vertices.emplace_back(Vertex2D{x, y + h, z, color});
+		vertices.emplace_back(Vertex2D{x, y, z, color});
+		
+		vertices.emplace_back(Vertex2D{x + w, y, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y + h, z + d, color});
+		vertices.emplace_back(Vertex2D{x + w, y + h, z, color});
+		vertices.emplace_back(Vertex2D{x + w, y, z, color});
+
+		this->render_type = render_type;
+	}
+
 public:
 	void FillRect(float x, float y, float w, float h) {
 		RenderRect(x, y, w, h, FILL_RECT);
@@ -270,6 +311,10 @@ public:
 
 	void DrawRect(glm::vec3 &pos, float w, float h) {
 		RenderRect(pos.x, pos.y, w, h, DRAW_RECT);
+	}
+
+	void DrawCube(const glm::ivec3 &pos, float w, float h, float d) {
+		RenderCube(pos.x, pos.y, pos.z, w, h, d, DRAW_CUBE);
 	}
 
 	void TextureRect(const glm::vec2 &pos, const glm::vec2 &dimension, const glm::vec2 &uv_pos, const glm::vec2 &uv_size, Texture *texture) {
@@ -491,6 +536,14 @@ public:
 
 		render_type = TEXTURE_CUBE;
 	}
+	
+	bool polygon_mode = true;
+	void WireMode(bool value) {
+		if (polygon_mode != value) {
+			glPolygonMode(GL_FRONT_AND_BACK, (value) ? GL_FILL : GL_LINE);
+			polygon_mode = value;
+		}
+	}
 
 	void Render() {
 		if (vertices.size() == 0) return;
@@ -544,6 +597,16 @@ public:
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glDrawArrays(GL_QUADS, 0, vertices.size());
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+
+		if (render_type == DRAW_CUBE && !polygon_mode) {
+			basic_shader->bind();
+
+			VAO->getVBO()->Add(vertices);
+			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			// WireMode(false);
+			glDrawArrays(GL_QUADS, 0, vertices.size());
+			// if (polygon_mode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 		
 		if (render_type == TEXTURE_RECT) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../define.h"
+#include "../render/Renderer.h"
 
 class KeyListener {
 public:
@@ -21,6 +22,7 @@ public:
 		if (sharedInstance()->keyState[key] == GLFW_RELEASE && action == GLFW_PRESS && key == GLFW_KEY_E) {
 			auto &toggle = sharedInstance()->toggle;
 			glPolygonMode(GL_FRONT_AND_BACK, (toggle) ? GL_LINE : GL_FILL);
+			Renderer::SharedInstance()->polygon_mode = !toggle;
 			toggle = !toggle;
 		}
 		sharedInstance()->keyState[key] = action;
