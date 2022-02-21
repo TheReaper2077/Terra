@@ -117,7 +117,7 @@ void Window::Gameloop() {
 		const auto &t_start = std::chrono::high_resolution_clock::now();
 
 		glfwPollEvents();
-		glClearColor(0, 0, 0, 1);
+		glClearColor(0, 1, 1, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		camera->Update(dt);
