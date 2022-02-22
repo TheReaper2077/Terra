@@ -75,6 +75,8 @@ void DrawQuad(Chunk *chunk, float x, float y, float z, float w, float h, float d
 }
 
 void MeshChunk(Chunk *chunk, Chunk *front, Chunk *back, Chunk *top, Chunk *bottom, Chunk *left, Chunk *right) {
+	if (chunk->meshed) return;
+
 	auto& chunk_blocks = chunk->chunk_blocks;
 	auto& id = chunk->id;
 	auto& visible = chunk->visible;
@@ -220,12 +222,12 @@ void RenderChunk(Chunk *chunk) {
 	if (visible && mesh.size()) {
 		Renderer::SharedInstance()->RenderMesh(mesh);
 	}
-	// else
-	// renderer->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
+	Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
 	// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
-	if (top_chunk) {
-		Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
-	}
+
+	// if (top_chunk) {
+	// 	Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
+	// }
 }
 
 void Add(Chunk *chunk, const glm::ivec3 &pos, const BlockID &block) {

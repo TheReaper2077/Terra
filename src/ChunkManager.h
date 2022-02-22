@@ -43,10 +43,12 @@ public:
 
 	void Generate() {
 		for (auto& id: generate_request) {
+			if (GetChunkAvailable(id) != nullptr) continue;
+
 			auto* chunk = GetChunk(id);
 			// GenerateChunk(chunk);
 			mesh_request.push_back(chunk);
-			generate_threads.push_back(std::thread(GenerateChunk, chunk));
+			generate_threads.push_back(std::thread(&GenerateChunk, chunk));
 
 			auto* front = GetChunkAvailable(glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z - 16));
 			if (front != nullptr) {
@@ -94,9 +96,56 @@ public:
 		if (generate_threads.size()) generate_threads.clear();
 		if (generate_request.size()) generate_request.clear();
 
-		// for (auto* chunk: mesh_request) {
-		// 	if (!chunk->top_chunk) generate_request.push_back(chunk->id);
-		// }
+		for (auto* chunk: mesh_request) {
+			glm::ivec3 id;
+
+			if (!chunk->top_chunk) {
+				id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z);
+				if (GetChunkAvailable(id) == nullptr) {
+					generate_request.push_back(id);
+				}
+			} else {
+			// 	id = glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z - 16);
+			// 	auto* front = GetChunkAvailable(id);
+			// 	if (front == nullptr) {
+			// 		generate_request.push_back(id);
+			// 	} else {
+
+			// 	}
+
+			// 	id = glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z + 16);
+			// 	auto* back = GetChunkAvailable(id);
+			// 	if (back == nullptr) {
+			// 		generate_request.push_back(id);
+			// 	} else {
+
+			// 	}
+
+			// 	id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z);
+			// 	auto* top = GetChunkAvailable(id);
+			// 	if (top == nullptr) {
+			// 		generate_request.push_back(id);
+			// 	} else {
+
+			// 	}
+
+			// 	id = glm::ivec3(chunk->id.x - 16, chunk->id.y, chunk->id.z);
+			// 	auto* left = GetChunkAvailable(id);
+			// 	if (left == nullptr) {
+			// 		generate_request.push_back(id);
+			// 	} else {
+
+			// 	}
+
+			// 	id = glm::ivec3(chunk->id.x + 16, chunk->id.y, chunk->id.z);
+			// 	auto* right = GetChunkAvailable(id);
+			// 	if (right == nullptr) {
+			// 		generate_request.push_back(id);
+			// 	} else {
+
+			// 	}
+			// }
+		}
 	}
 
 	void Mesh() {
@@ -112,8 +161,8 @@ public:
 
 			// std::cout << chunk->id.x << " " << chunk->id.y << " " << chunk->id.z << " \n";
 
-			// mesh_threads.push_back(std::thread(MeshChunk, chunk, front, back, top, bottom, left, right));
-			MeshChunk(chunk, front, back, top, bottom, left, right);
+			mesh_threads.push_back(std::thread(&MeshChunk, chunk, front, back, top, bottom, left, right));
+			// MeshChunk(chunk, front, back, top, bottom, left, right);
 		}
 
 		for (auto& thread: mesh_threads) {
@@ -148,16 +197,16 @@ public:
 					auto* chunk = GetChunkAvailable(id);
 
 					if (chunk == nullptr) {
-						generate_request.push_back(id);
+						if (y == 0) {
+							generate_request.push_back(id);
+						}
 						break;
 					}
 
 					y++;
 					RenderChunk(chunk);
 
-					if (chunk->top_chunk) {
-						break;
-					}
+					top = chunk->top_chunk;
 				}
 			}
 		}
