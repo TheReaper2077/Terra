@@ -32,7 +32,7 @@ public:
 		cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 		cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
 
-		renderer->SetProjection(glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.01f, 400.0f));
+		renderer->SetProjection(glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.01f, 1000.0f));
 		renderer->SetModel(glm::mat4(1.0f));
 	}
 

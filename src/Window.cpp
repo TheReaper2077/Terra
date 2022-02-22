@@ -1,6 +1,9 @@
 #include "Window.h"
 #include "Camera.h"
-#include "World.h"
+
+#include "ChunkGeneration.h"
+#include "ChunkManager.h"
+
 #include "TileRegistry.h"
 #include "render/Renderer.h"
 #include "events/KeyListener.h"
@@ -9,7 +12,8 @@
 Renderer *renderer = Renderer::SharedInstance();
 TileRegistry *tile_registry = TileRegistry::SharedInstance();
 Camera *camera = new Camera();
-World *world = world = new World();
+ChunkManager *chunk_manager = new ChunkManager();
+// World *world = world = new World();
 
 Window::Window() {
 
@@ -57,59 +61,16 @@ void Window::Init() {
 	tile_registry->RegisterBlock(GRASS_BLOCK, BlockTiles{GRASS, GRASS, GRASS_TOP, DIRT, GRASS, GRASS});
 	tile_registry->RegisterBlock(STONE_BLOCK, BlockTiles{STONE, STONE, STONE, STONE, STONE, STONE});
 	tile_registry->RegisterBlock(DIRT_BLOCK, BlockTiles{DIRT, DIRT, DIRT, DIRT, DIRT, DIRT});
-
-	// renderer->SetProjection(glm::ortho<float>(0, WIDTH, HEIGHT, 0, -1, 1));
-	// renderer->SetView(glm::mat4(1.0f));
-	// renderer->SetModel(glm::mat4(1.0f));
-
-	// for (int z = -16*5; z != 16*5; z++) {
-	// 	for (int x = -16*5; x != 16*5; x++) {
-	// 		float value = glm::simplex(glm::vec2{x / 64.0, z / 64.0});
-	// 		value = (value + 1) / 2;
-	// 		value *= 16 + 16;
-	// 		for (int y = 0; y <= value; y++) {
-	// 			if (y > value - 1) {
-	// 				world->AddBlock(Block{SOLID, GRASS_BLOCK}, glm::ivec3(x, y, z));
-	// 			} else if (y > value - 4) {
-	// 				world->AddBlock(Block{SOLID, DIRT_BLOCK}, glm::ivec3(x, y, z));
-	// 			} else {
-	// 				world->AddBlock(Block{SOLID, STONE_BLOCK}, glm::ivec3(x, y, z));
-	// 			}
+	
+	// for (int z = 0; z != 5; z++) {
+	// 	for (int x = 0; x != 5; x++) {
+	// 		for (int y = 0; y != 5; y++) {
+	// 			chunk_manager->GetChunk(glm::ivec3(x*16, y*16, z*16));
 	// 		}
 	// 	}
 	// }
-
-	// for (int z = 0; z != 16; z++) {
-	// 	for (int x = 0; x != 16; x++) {
-	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 1, z));
-	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 2, z));
-	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 3, z));
-	// 		world->AddBlock(STONE_BLOCK, glm::ivec3(x, x + z - 4, z));
-	// 	}
-	// }
-
-	// for (int z = 15*-2; z != 15*2; z++) {
-	// 	for (int x = 15*-2; x != 15*2; x++) {
-	// 		for (int y = 15*-2; y != 15*2; y++) {
-	// 			world->AddBlock(STONE_BLOCK, glm::ivec3(x, y, z));
-	// 		}
-	// 	}
-	// }
-
-				// threads.push_back(std::thread(&Chunk::Generate, std::ref(GetChunk(pos))));
-	// world->GenerateChunk(glm::ivec3(16, 0, 0));
-	// world->GenerateChunk(glm::ivec3(0, 0, 0));
-	// world->GenerateChunk(glm::ivec3(16, 0, 16));
-	// world->GenerateChunk(glm::ivec3(0, 0, 16));
-	// int idx = 0;
-	// for (int z = 0; z != 16; z++) {
-	// 	for (int x = 0; x != 16; x++) {
-	// 		for (int y = 0; y != 16; y++) if (y == 15) idx++;
-	// 	}
-	// }
-
-	// std::cout << idx << " " << 16*16;
-	// exit(0);
+	
+	// chunk_manager->AddBlock(glm::ivec3(0, 0, 0), STONE_BLOCK);
 }
 
 void Window::Gameloop() {
@@ -117,15 +78,16 @@ void Window::Gameloop() {
 		const auto &t_start = std::chrono::high_resolution_clock::now();
 
 		glfwPollEvents();
-		glClearColor(0, 1, 1, 1);
+		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		camera->Update(dt);
 
 		renderer->SetColor(255, 0, 255, 255);
 
-		world->Update(dt, camera->cameraPos);
-		world->Render((glm::ivec3)camera->cameraPos);
+		chunk_manager->Generate();
+		chunk_manager->Mesh();
+		chunk_manager->Render((glm::ivec3)camera->cameraPos);
 
 		renderer->Render();
 

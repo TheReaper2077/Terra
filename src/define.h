@@ -1,10 +1,11 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
+#include <queue>
+#include <deque>
 
-#include <glm/gtx/hash.hpp>
 
 #include <thread>
+#include <glm/gtx/hash.hpp>
 #include <string>
 #include <bitset>
 #include <iostream>
@@ -42,3 +43,6 @@
 #define BASIC_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\basic.fs"
 #define TEXTURE_VS "D:\\C++\\Ortho Test\\src\\render\\shaders\\texture.vs"
 #define TEXTURE_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\texture.fs"
+
+
+#define CHUNK_SIZE 16
