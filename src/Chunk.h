@@ -10,6 +10,7 @@ struct Chunk {
 
 	BlockID chunk_blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {AIR_BLOCK};
 	std::vector<Vertex2D> mesh;
+	Buffer<GL_ARRAY_BUFFER> buffer;
 
 	bool generated;
 	bool meshed;
@@ -178,6 +179,15 @@ void GenerateChunk(Chunk *chunk) {
 
 	int i = 0;
 	float top_value = 0;
+
+	// for (int z = 0; z != 16; z++) {
+	// 	for (int x = 0; x != 16; x++) {
+	// 		chunk->chunk_blocks[z][0][x] = GRASS_BLOCK;
+	// 	}
+	// }
+	// top_chunk = true;
+	// generated = true;
+	// visible = true;
 	
 	for (int z = 0; z != 16; z++) {
 		for (int x = 0; x != 16; x++) {
@@ -217,17 +227,17 @@ void RenderChunk(Chunk *chunk) {
 	auto& visible = chunk->visible;
 	auto& top_chunk = chunk->top_chunk;
 	auto& generated = chunk->generated;
-	auto& mesh = chunk->mesh;
 
-	if (visible && mesh.size()) {
-		Renderer::SharedInstance()->RenderMesh(mesh);
+	if (visible && chunk->meshed && chunk->buffer.init) {
+		Renderer::SharedInstance()->RenderMesh(&chunk->buffer);
+		// Renderer::SharedInstance()->RenderMesh(chunk->mesh);
 	}
-	Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
+	// Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
 	// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
 
-	// if (top_chunk) {
-	// 	Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
-	// }
+	if (top_chunk) {
+		Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
+	}
 }
 
 void Add(Chunk *chunk, const glm::ivec3 &pos, const BlockID &block) {

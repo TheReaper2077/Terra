@@ -6,13 +6,16 @@ template <unsigned int Target>
 class Buffer {
 public:
 	unsigned int ID;
-	std::size_t curr_size = 0, used_size = 0;
+	std::size_t curr_size = 0, used_size = 0, element_size = 0;
+	bool init = false;
+	bool vbo_bound = false;
 	
 public:
 	Buffer() {}
 
 	void Init() {
 		glGenBuffers(1, &ID);
+		init = true;
 	}
 
 	void bind() {
@@ -27,12 +30,14 @@ public:
 	void Add(const T &data, std::size_t offset = 0) {
 		bind();
 		curr_size = data.size()*sizeof(data[0]);
-		if (curr_size > used_size) {
-			glBufferData(Target, curr_size, data.data(), GL_DYNAMIC_DRAW);
+		element_size = data.size();
+		glBufferData(Target, curr_size, data.data(), GL_STATIC_DRAW);
+
+		if (curr_size > used_size)
 			used_size = curr_size;
-		} else {
-			glBufferSubData(Target, offset, curr_size, data.data());
-		}
+		// } else {
+		// 	glBufferSubData(Target, offset, curr_size, data.data());
+		// }
 	}
 
 	template <typename T>

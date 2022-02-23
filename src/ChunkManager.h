@@ -103,48 +103,32 @@ public:
 				id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z);
 				if (GetChunkAvailable(id) == nullptr) {
 					generate_request.push_back(id);
+
+					// id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z - 16);
+					// auto* front = GetChunkAvailable(id);
+					// if (front == nullptr) {
+					// 	generate_request.push_back(id);
+					// }
+
+					// id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z + 16);
+					// auto* back = GetChunkAvailable(id);
+					// if (back == nullptr) {
+					// 	generate_request.push_back(id);
+					// }
+
+					// id = glm::ivec3(chunk->id.x - 16, chunk->id.y + 16, chunk->id.z);
+					// auto* left = GetChunkAvailable(id);
+					// if (left == nullptr) {
+					// 	generate_request.push_back(id);
+					// }
+
+					// id = glm::ivec3(chunk->id.x + 16, chunk->id.y + 16, chunk->id.z);
+					// auto* right = GetChunkAvailable(id);
+					// if (right == nullptr) {
+					// 	generate_request.push_back(id);
+					// }
 				}
-			} else {
-			// 	id = glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z - 16);
-			// 	auto* front = GetChunkAvailable(id);
-			// 	if (front == nullptr) {
-			// 		generate_request.push_back(id);
-			// 	} else {
-
-			// 	}
-
-			// 	id = glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z + 16);
-			// 	auto* back = GetChunkAvailable(id);
-			// 	if (back == nullptr) {
-			// 		generate_request.push_back(id);
-			// 	} else {
-
-			// 	}
-
-			// 	id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z);
-			// 	auto* top = GetChunkAvailable(id);
-			// 	if (top == nullptr) {
-			// 		generate_request.push_back(id);
-			// 	} else {
-
-			// 	}
-
-			// 	id = glm::ivec3(chunk->id.x - 16, chunk->id.y, chunk->id.z);
-			// 	auto* left = GetChunkAvailable(id);
-			// 	if (left == nullptr) {
-			// 		generate_request.push_back(id);
-			// 	} else {
-
-			// 	}
-
-			// 	id = glm::ivec3(chunk->id.x + 16, chunk->id.y, chunk->id.z);
-			// 	auto* right = GetChunkAvailable(id);
-			// 	if (right == nullptr) {
-			// 		generate_request.push_back(id);
-			// 	} else {
-
-			// 	}
-			// }
+			}
 		}
 	}
 
@@ -162,11 +146,22 @@ public:
 			// std::cout << chunk->id.x << " " << chunk->id.y << " " << chunk->id.z << " \n";
 
 			mesh_threads.push_back(std::thread(&MeshChunk, chunk, front, back, top, bottom, left, right));
+			
+			chunk->buffer.bind();
 			// MeshChunk(chunk, front, back, top, bottom, left, right);
 		}
 
 		for (auto& thread: mesh_threads) {
 			if (thread.joinable()) thread.join();
+		}
+
+		for (auto& chunk: mesh_request) {
+			if (chunk->mesh.size()) {
+				// Renderer::SharedInstance()->VAO->bind();
+				if (!chunk->buffer.init) chunk->buffer.Init();
+				chunk->buffer.Add(chunk->mesh);
+				chunk->mesh.clear();
+			}
 		}
 
 		mesh_threads.clear();
@@ -187,13 +182,13 @@ public:
 			camera_moved = true;
 		}
 
-		for (int z = -4;  z != 4; z++) {
-			for (int x = -4;  x != 4; x++) {
+		for (int z = -12;  z != 12; z++) {
+			for (int x = -12;  x != 12; x++) {
 				int y = 0;
 				bool top = false;
 
 				while (true) {
-					glm::ivec3 id = glm::ivec3(pos.x + x*16, y*16, pos.z + z*16);
+					glm::ivec3 id = glm::ivec3(x*16, y*16, z*16);
 					auto* chunk = GetChunkAvailable(id);
 
 					if (chunk == nullptr) {
@@ -203,10 +198,10 @@ public:
 						break;
 					}
 
-					y++;
 					RenderChunk(chunk);
 
 					top = chunk->top_chunk;
+					y++;
 				}
 			}
 		}

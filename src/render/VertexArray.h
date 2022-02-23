@@ -26,10 +26,9 @@ public:
 		EBO.Init();
 
 		bind();
-		VBO.bind();
-		EBO.bind();
 		
-		setAttrib(layout);
+		// setAttrib(layout);
+		
 	}
 
 	Buffer<GL_ARRAY_BUFFER> *getVBO() {
