@@ -33,7 +33,7 @@ public:
 		shader->setUniformiv("u_Textures", texture_indices);
 	}
 
-	Texture loadTexture(const char *filename) {
+	Texture LoadTexture(const char *filename) {
 		unsigned int id;
 		int width, height, nr_channels;
 		unsigned char* data;

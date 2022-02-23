@@ -103,30 +103,30 @@ public:
 				id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z);
 				if (GetChunkAvailable(id) == nullptr) {
 					generate_request.push_back(id);
+				}
+				// id = glm::ivec3(chunk->id.x, chunk->id.y + 16 - 16, chunk->id.z);
+				// if (GetChunkAvailable(id) == nullptr) {
+				// 	generate_request.push_back(id);
+				// }
+				
+				id = glm::ivec3(chunk->id.x + 16, chunk->id.y + 16, chunk->id.z);
+				if (GetChunkAvailable(id) == nullptr) {
+					generate_request.push_back(id);
+				}
 
-					// id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z - 16);
-					// auto* front = GetChunkAvailable(id);
-					// if (front == nullptr) {
-					// 	generate_request.push_back(id);
-					// }
+				id = glm::ivec3(chunk->id.x - 16, chunk->id.y + 16, chunk->id.z);
+				if (GetChunkAvailable(id) == nullptr) {
+					generate_request.push_back(id);
+				}
 
-					// id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z + 16);
-					// auto* back = GetChunkAvailable(id);
-					// if (back == nullptr) {
-					// 	generate_request.push_back(id);
-					// }
+				id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z + 16);
+				if (GetChunkAvailable(id) == nullptr) {
+					generate_request.push_back(id);
+				}
 
-					// id = glm::ivec3(chunk->id.x - 16, chunk->id.y + 16, chunk->id.z);
-					// auto* left = GetChunkAvailable(id);
-					// if (left == nullptr) {
-					// 	generate_request.push_back(id);
-					// }
-
-					// id = glm::ivec3(chunk->id.x + 16, chunk->id.y + 16, chunk->id.z);
-					// auto* right = GetChunkAvailable(id);
-					// if (right == nullptr) {
-					// 	generate_request.push_back(id);
-					// }
+				id = glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z - 16);
+				if (GetChunkAvailable(id) == nullptr) {
+					generate_request.push_back(id);
 				}
 			}
 		}
@@ -184,11 +184,8 @@ public:
 
 		for (int z = -12;  z != 12; z++) {
 			for (int x = -12;  x != 12; x++) {
-				int y = 0;
-				bool top = false;
-
-				while (true) {
-					glm::ivec3 id = glm::ivec3(x*16, y*16, z*16);
+				for (int y = 0; true; y++) {
+					glm::ivec3 id = glm::ivec3(pos.x + x*16, y*16, pos.z + z*16);
 					auto* chunk = GetChunkAvailable(id);
 
 					if (chunk == nullptr) {
@@ -199,9 +196,6 @@ public:
 					}
 
 					RenderChunk(chunk);
-
-					top = chunk->top_chunk;
-					y++;
 				}
 			}
 		}

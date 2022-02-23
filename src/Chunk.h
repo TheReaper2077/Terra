@@ -229,14 +229,15 @@ void RenderChunk(Chunk *chunk) {
 	auto& generated = chunk->generated;
 
 	if (visible && chunk->meshed && chunk->buffer.init) {
+		// Renderer::SharedInstance()->SetModel(::ivec3()
 		Renderer::SharedInstance()->RenderMesh(&chunk->buffer);
 		// Renderer::SharedInstance()->RenderMesh(chunk->mesh);
 	}
-	// Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
 	// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
 
 	if (top_chunk) {
-		Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
+		// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
+		Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
 	}
 }
 

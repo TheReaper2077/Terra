@@ -1,11 +1,10 @@
 #pragma once
 
 #include "../define.h"
-#include "VertexArray.h"
+#include "Buffer.h"
 #include "Types.h"
 #include "Texture.h"
 #include "Shader.h"
-#include "../TileRegistry.h"
 
 using Faces = std::bitset<6>;
 
@@ -39,8 +38,10 @@ private:
 	std::map<unsigned int, RenderType> layer_id_map;
 
 public:
-	VertexArray *VAO = VertexArray::sharedInstance();
 	bool polygon_mode = true;
+
+	unsigned int vao;
+	unsigned int vbo, ebo;
 
 private:
 	Renderer() {}
@@ -52,11 +53,13 @@ public:
 	}
 
 	void Init() {
-		VAO->Init(LAYOUT);
+		glGenVertexArrays(1, &vao);
+		glGenBuffers(1, &vbo);
+		glGenBuffers(1, &ebo);
 
-
-		VAO->getVBO()->bind();
-		VAO->getEBO()->bind();
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 		
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
@@ -98,7 +101,7 @@ public:
 	}
 
 	Texture LoadTexture(const char *filename) {
-		return texture_handler->loadTexture(filename);
+		return texture_handler->LoadTexture(filename);
 	}
 
 private:
@@ -116,7 +119,10 @@ private:
 		
 		max_quads = curr_quads;
 		
-		VAO->getEBO()->Add(indices);
+		// VAO->getEBO()->Add(indices);
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
 	}
 
 public:
@@ -172,86 +178,6 @@ public:
 		RenderCube(pos.x, pos.y, pos.z, w, h, d, DRAW_CUBE);
 	}
 
-	void TextureCube(float x, float y, float z, float w, float h, float d, Tile &tile, const Faces &faces) {
-		TextureCube(x, y, z, w, h, d, tile.x, tile.y, tile.w, tile.h, &tile.texture, faces, vertices);
-	}
-
-	void TextureCube(float x, float y, float z, float w, float h, float d, Tile &tile, const Faces &faces, std::vector<Vertex2D> &mesh) {
-		TextureCube(x, y, z, w, h, d, tile.x, tile.y, tile.w, tile.h, &tile.texture, faces, mesh);
-	}
-
-	void TextureCube(float x, float y, float z, float w, float h, float d, float tx, float ty, float tw, float th, Texture *texture, const Faces &faces) {
-		TextureCube(x, y, z, w, h, d, tx, ty, tw, th, texture, faces, vertices);
-	}
-
-	void TextureCube(float x, float y, float z, float w, float h, float d, float tx, float ty, float tw, float th, Texture *texture, const Faces &faces, std::vector<Vertex2D> &mesh) {
-		if (next_tex_index > 5 || render_type != TEXTURE_CUBE) {
-			Render();
-		}
-
-		curr_quads += faces.count();
-
-		tx /= texture->width;
-		ty /= texture->height;
-		tw /= texture->width;
-		th /= texture->height;
-
-		mesh.reserve(mesh.size() + faces.count());
-		
-		if (index_tex_map.find(texture->id) == index_tex_map.end()) {
-			index_tex_map[texture->id] = next_tex_index;
-			next_tex_index++;
-		}
-
-		float index = index_tex_map[texture->id];
-
-		// front
-		// back
-		// top
-		// bottom
-		// left
-		// right
-
-		if (faces[0]) {// mesh.emplace_back(Vertex2D{x, y, z, tx, ty, index});// mesh.emplace_back(Vertex2D{x, y + h, z, tx, ty + th, index});// mesh.emplace_back(Vertex2D{x + w, y + h, z, tx + tw, ty + th,// mesh.emplace_back(Vertex2D{x + w, y, z, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x, y, z, tx + tw, ty + th, index});
-			mesh.emplace_back(Vertex2D{x, y + h, z, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y + h, z, tx, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y, z, tx, ty + th, index});
-		}
-		if (faces[1]) {// mesh.emplace_back(Vertex2D{x, y, z + d, tx, ty, index});// mesh.emplace_back(Vertex2D{x, y + h, z + d, tx, ty + th, index});// mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tx + tw, ty + th,// mesh.emplace_back(Vertex2D{x + w, y, z + d, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x, y, z + d, tx + tw, ty + th, index});
-			mesh.emplace_back(Vertex2D{x, y + h, z + d, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tx, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y, z + d, tx, ty + th, index});
-		}
-		if (faces[2]) {
-			mesh.emplace_back(Vertex2D{x, y + h, z, tx + tw, ty + th, index});
-			mesh.emplace_back(Vertex2D{x, y + h, z + d, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tx, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y + h, z, tx, ty + th, index});
-		}
-		if (faces[3]) {
-			mesh.emplace_back(Vertex2D{x, y, z, tx + tw, ty + th, index});
-			mesh.emplace_back(Vertex2D{x, y, z + d, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y, z + d, tx, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y, z, tx, ty + th, index});
-		}
-		if (faces[4]) {
-			mesh.emplace_back(Vertex2D{x, y, z + d, tx + tw, ty + th, index});
-			mesh.emplace_back(Vertex2D{x, y + h, z + d, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x, y + h, z, tx, ty, index});
-			mesh.emplace_back(Vertex2D{x, y, z, tx, ty + th, index});
-		}
-		if (faces[5]) {
-			mesh.emplace_back(Vertex2D{x + w, y, z + d, tx + tw, ty + th, index});
-			mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tx + tw, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y + h, z, tx, ty, index});
-			mesh.emplace_back(Vertex2D{x + w, y, z, tx, ty + th, index});
-		}
-
-		render_type = TEXTURE_CUBE;
-	}
-
 	float GetTextureIndex(Texture *texture) {
 		if (index_tex_map.find(texture->id) == index_tex_map.end()) {
 			index_tex_map[texture->id] = next_tex_index;
@@ -261,17 +187,16 @@ public:
 		return index_tex_map[texture->id];
 	}
 
-	TileRegistry *tile_registry = TileRegistry::SharedInstance();
-
 	void Render() {
 		if (vertices.size() == 0) return;
 		
 		if (render_type == DRAW_CUBE && !polygon_mode) {
 			basic_shader->bind();
 
-			VAO->getVBO()->Add(vertices);
-			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			// WireMode(false);
+			glBindVertexArray(vao);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo);
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STATIC_DRAW);
+
 			glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex2D), 0);
 			glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex2D), (void*)offsetof(Vertex2D, color));
 
@@ -280,26 +205,6 @@ public:
 		}
 
 		vertices.clear();
-	}
-
-	void RenderMesh(std::vector<Vertex2D> &mesh) {
-		curr_quads = mesh.size()/4;
-
-		if (curr_quads > max_quads) {
-			IncreaseRectIndices();
-		}
-
-		texture_shader->bind();
-
-		for (const auto& pair: index_tex_map) {
-			texture_handler->bindTextureUnit(next_tex_index, pair.second);
-		}
-
-		VAO->getVBO()->Add(mesh);
-		glDrawElements(GL_TRIANGLES, mesh.size()*1.5, GL_UNSIGNED_INT, NULL);
-		curr_quads = 0;
-		next_tex_index = 0;
-		index_tex_map.clear();
 	}
 
 	void RenderMesh(Buffer<GL_ARRAY_BUFFER> *buffer) {
@@ -315,7 +220,8 @@ public:
 			texture_handler->bindTextureUnit(next_tex_index, pair.second);
 		}
 
-		VAO->bind();
+		// VAO->bind();
+		glBindVertexArray(vao);
 		buffer->bind();
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex2D), 0);
