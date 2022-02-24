@@ -43,6 +43,10 @@ public:
 	unsigned int vao;
 	unsigned int vbo, ebo;
 
+	glm::mat4 projection = glm::mat4(1.0f);
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 model = glm::mat4(1.0f);
+
 private:
 	Renderer() {}
 
@@ -78,8 +82,8 @@ public:
 
 		UBO = new Buffer<GL_UNIFORM_BUFFER>();
 		UBO->Init();
-		UBO->Allocate(3*sizeof(glm::mat4));
-		UBO->BindRangeToIndex(0, NULL, 3*sizeof(glm::mat4));
+		UBO->Allocate(sizeof(glm::mat4));
+		UBO->BindRangeToIndex(0, NULL, sizeof(glm::mat4));
 
 		texture_handler->setup(texture_shader);
 	}
@@ -89,15 +93,28 @@ public:
 	}
 
 	void SetProjection(const glm::mat4 &projection) {
-		UBO->Add(0*sizeof(glm::mat4), sizeof(glm::mat4), &projection[0][0]);
+		if (this->projection == projection) return;
+		this->projection = projection;
+	
+		UpdateMVP();
 	}
 
 	void SetView(const glm::mat4 &view) {
-		UBO->Add(1*sizeof(glm::mat4), sizeof(glm::mat4), &view[0][0]);
+		if (this->view == view) return;
+		this->view = view;
+	
+		UpdateMVP();
 	}
 
 	void SetModel(const glm::mat4 &model) {
-		UBO->Add(2*sizeof(glm::mat4), sizeof(glm::mat4), &model[0][0]);
+		if (this->model == model) return;
+		this->model = model;
+
+		UpdateMVP();
+	}
+
+	void UpdateMVP() {
+		UBO->Add(0, sizeof(glm::mat4), &(projection * view * model)[0][0]);
 	}
 
 	Texture LoadTexture(const char *filename) {
