@@ -7,7 +7,6 @@
 class ChunkManager {
 	std::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> chunk_ptr_map;
 
-	bool camera_moved = false;
 	glm::ivec3 last_camera_chunk_pos;
 
 	std::vector<glm::ivec3> generate_request;
@@ -39,6 +38,18 @@ public:
 
 	bool ChunkPresent(const glm::ivec3 &pos) {
 		return (chunk_ptr_map.find(pos & ~15) == chunk_ptr_map.end());
+	}
+
+	bool BlockSolid(glm::ivec3 pos) {
+		auto* chunk = GetChunkAvailable(pos);
+
+		if (chunk != nullptr)
+			return (chunk->Get(pos) != AIR_BLOCK);
+		return false;
+	}
+
+	void ChangeBlock(glm::ivec3 pos) {
+		// if (pos.)
 	}
 
 	void Generate() {
@@ -144,7 +155,6 @@ public:
 
 		if (pos.x != last_camera_chunk_pos.x && pos.y != last_camera_chunk_pos.y) {
 			last_camera_chunk_pos = pos;
-			camera_moved = true;
 		}
 
 		for (int z = -12;  z != 12; z++) {
@@ -167,16 +177,14 @@ public:
 				}
 			}
 		}
-
-		camera_moved = false;
 	}
 
 public:
 	void AddBlock(const glm::ivec3 &pos, const BlockID &block) {
-		Add(GetChunk(pos), pos, block);
+		GetChunk(pos)->Add(pos, block);
 	}
 
 	BlockID &GetBlock(const glm::ivec3 &pos) {
-		return Get(GetChunk(pos), pos);
+		return GetChunk(pos)->Get(pos);
 	}
 };

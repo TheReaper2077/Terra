@@ -36,13 +36,14 @@
 #include <glm/gtx/matrix_cross_product.hpp>
 
 #define TITLE "STUFF"
-#define WIDTH 1280
-#define HEIGHT 640
+#define WIDTH 1280.0f
+#define HEIGHT 640.0f
 
 #define BASIC_VS "D:\\C++\\Ortho Test\\src\\render\\shaders\\basic.vs"
 #define BASIC_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\basic.fs"
+#define UI_BASIC_VS "D:\\C++\\Ortho Test\\src\\render\\shaders\\ui_basic.vs"
+#define UI_BASIC_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\ui_basic.fs"
 #define TEXTURE_VS "D:\\C++\\Ortho Test\\src\\render\\shaders\\texture.vs"
 #define TEXTURE_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\texture.fs"
-
 
 #define CHUNK_SIZE 16

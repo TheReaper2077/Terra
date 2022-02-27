@@ -2,29 +2,30 @@
 
 #include "../define.h"
 #include "Buffer.h"
-#include "Types.h"
+#include "Vertex.h"
 #include "Texture.h"
 #include "Shader.h"
-
-using Faces = std::bitset<6>;
 
 enum RenderType {
 	LINE, POINT,
 	FILL_TRIANGLE, DRAW_TRIANGLE,
 	TEXTURE_RECT, FILL_RECT, DRAW_RECT,
-	TEXTURE_CUBE, DRAW_CUBE
+	TEXTURE_CUBE, DRAW_CUBE, FILL_CUBE,
+	UI_LINE,
 };
-
 
 class Renderer {
 private:
 	Buffer<GL_UNIFORM_BUFFER> *UBO;
-	std::vector<Vertex2D> vertices;
+	
+	std::vector<Vertex3D> vertices3D;
+	std::vector<Vertex2D> vertices2D;
+
 	std::vector<unsigned int> indices;
 
-	TextureHandler *texture_handler = TextureHandler::sharedInstance();
+	TextureHandler *texture_handler = nullptr;
 
-	Shader *texture_shader, *basic_shader;
+	Shader *texture_shader, *basic_shader, *ui_basic_shader;
 	RenderType render_type;
 
 	float color[4] = {1, 1, 1, 1};
@@ -80,16 +81,26 @@ public:
 
 		glUniformBlockBinding(basic_shader->ID, glGetUniformBlockIndex(basic_shader->ID, "Matrices"), 0);
 
+		ui_basic_shader = new Shader();
+		ui_basic_shader->Init(UI_BASIC_VS, UI_BASIC_FS);
+		ui_basic_shader->bind();
+
+		glUniformBlockBinding(ui_basic_shader->ID, glGetUniformBlockIndex(ui_basic_shader->ID, "Matrices_2D"), 1);
+
 		UBO = new Buffer<GL_UNIFORM_BUFFER>();
 		UBO->Init();
-		UBO->Allocate(sizeof(glm::mat4));
+		UBO->Allocate(2*sizeof(glm::mat4));
 		UBO->BindRangeToIndex(0, NULL, sizeof(glm::mat4));
+		UBO->BindRangeToIndex(1, sizeof(glm::mat4), sizeof(glm::mat4));
 
-		texture_handler->setup(texture_shader);
-	}
+		texture_handler = new TextureHandler();
+		texture_handler->Init(texture_shader);
 
-	void CreateLayer(unsigned int layer_id, RenderType render_type) {
+		glm::mat4 ortho_projection = glm::ortho<float>(0, WIDTH, HEIGHT, 0, -1, 1);
+		glm::mat4 ortho_view = glm::mat4(1.0f);
+		glm::mat4 ortho_model = glm::mat4(1.0f);
 
+		UBO->Add(sizeof(glm::mat4), sizeof(glm::mat4), &(ortho_projection * ortho_view * ortho_model)[0][0]);
 	}
 
 	void SetProjection(const glm::mat4 &projection) {
@@ -116,7 +127,7 @@ public:
 	void UpdateMVP() {
 		UBO->Add(0, sizeof(glm::mat4), &(projection * view * model)[0][0]);
 	}
-
+	
 	Texture LoadTexture(const char *filename) {
 		return texture_handler->LoadTexture(filename);
 	}
@@ -136,7 +147,6 @@ private:
 		
 		max_quads = curr_quads;
 		
-		// VAO->getEBO()->Add(indices);
 		glBindVertexArray(vao);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
@@ -150,49 +160,86 @@ public:
 		this->color[3] = a/255.0;
 	}
 
-	void RenderCube(float x, float y, float z, float w, float h, float d, RenderType render_type) {
+	void RenderLine(float x0, float y0, float x1, float y1, RenderType render_type) {
 		if (this->render_type != render_type) {
 			Render();
 		}
 
-		curr_quads += 6;
-		vertices.reserve(vertices.size() + 4*6);
-		
-		vertices.emplace_back(Vertex2D{x, y, z, color});
-		vertices.emplace_back(Vertex2D{x, y + h, z, color});
-		vertices.emplace_back(Vertex2D{x + w, y + h, z, color});
-		vertices.emplace_back(Vertex2D{x + w, y, z, color});
-		
-		vertices.emplace_back(Vertex2D{x, y, z + d, color});
-		vertices.emplace_back(Vertex2D{x, y + h, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y + h, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y, z + d, color});
-		
-		vertices.emplace_back(Vertex2D{x, y + h, z, color});
-		vertices.emplace_back(Vertex2D{x, y + h, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y + h, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y + h, z, color});
-		
-		vertices.emplace_back(Vertex2D{x, y, z, color});
-		vertices.emplace_back(Vertex2D{x, y, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y, z, color});
-		
-		vertices.emplace_back(Vertex2D{x, y, z + d, color});
-		vertices.emplace_back(Vertex2D{x, y + h, z + d, color});
-		vertices.emplace_back(Vertex2D{x, y + h, z, color});
-		vertices.emplace_back(Vertex2D{x, y, z, color});
-		
-		vertices.emplace_back(Vertex2D{x + w, y, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y + h, z + d, color});
-		vertices.emplace_back(Vertex2D{x + w, y + h, z, color});
-		vertices.emplace_back(Vertex2D{x + w, y, z, color});
+		vertices2D.reserve(2 + vertices2D.size());
+
+		vertices2D.emplace_back(Vertex2D{x0, y0, color});
+		vertices2D.emplace_back(Vertex2D{x1, y1, color});
 
 		this->render_type = render_type;
 	}
 
-	void DrawCube(const glm::ivec3 &pos, float w, float h, float d) {
-		RenderCube(pos.x, pos.y, pos.z, w, h, d, DRAW_CUBE);
+	void DrawLine(float x0, float y0, float x1, float y1) {
+		RenderLine(x0, y0, x1, y1, UI_LINE);
+	}
+
+	void RenderCube(float x, float y, float z, float w, float h, float d, RenderType render_type, uint8_t faces) {
+		if (this->render_type != render_type) {
+			Render();
+		}
+
+		curr_quads += (faces & 0b000001 + faces & 0b000010 + faces & 0b000100 + faces & 0b001000 + faces & 0b010000 + faces & 0b100000);
+		vertices3D.reserve(vertices3D.size() + 4*curr_quads);
+
+		if (faces & 0b000001) {
+			vertices3D.emplace_back(Vertex3D{x, y, z, color});
+			vertices3D.emplace_back(Vertex3D{x, y + h, z, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y + h, z, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y, z, color});
+		}
+
+		if (faces & 0b000010) {
+			vertices3D.emplace_back(Vertex3D{x, y, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x, y + h, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y + h, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y, z + d, color});
+		}
+		
+		if (faces & 0b000100) {
+			vertices3D.emplace_back(Vertex3D{x, y + h, z, color});
+			vertices3D.emplace_back(Vertex3D{x, y + h, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y + h, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y + h, z, color});
+		}
+		
+		if (faces & 0b001000) {
+			vertices3D.emplace_back(Vertex3D{x, y, z, color});
+			vertices3D.emplace_back(Vertex3D{x, y, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y, z, color});
+		}
+		
+		if (faces & 0b010000) {
+			vertices3D.emplace_back(Vertex3D{x, y, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x, y + h, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x, y + h, z, color});
+			vertices3D.emplace_back(Vertex3D{x, y, z, color});
+		}
+		
+		if (faces & 0b100000) {
+			vertices3D.emplace_back(Vertex3D{x + w, y, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y + h, z + d, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y + h, z, color});
+			vertices3D.emplace_back(Vertex3D{x + w, y, z, color});
+		}
+
+		this->render_type = render_type;
+	}
+
+	void DrawCube(const glm::ivec3 &pos, float w, float h, float d, uint8_t faces = 0b11111) {
+		RenderCube(pos.x, pos.y, pos.z, w, h, d, DRAW_CUBE, faces);
+	}
+
+	void FillCube(const glm::ivec3 &pos, float w, float h, float d, uint8_t faces = 0b11111) {
+		RenderCube(pos.x, pos.y, pos.z, w, h, d, FILL_CUBE, faces);
+	}
+
+	void FillCube(const glm::vec3 &pos, float w, float h, float d, uint8_t faces = 0b11111) {
+		RenderCube(pos.x, pos.y, pos.z, w, h, d, FILL_CUBE, faces);
 	}
 
 	float GetTextureIndex(Texture *texture) {
@@ -205,23 +252,52 @@ public:
 	}
 
 	void Render() {
-		if (vertices.size() == 0) return;
-		
-		if (render_type == DRAW_CUBE && !polygon_mode) {
-			basic_shader->bind();
+		if (vertices3D.size() != 0) {
+			if (render_type == DRAW_CUBE && !polygon_mode) {
+				basic_shader->bind();
 
-			glBindVertexArray(vao);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STATIC_DRAW);
+				glBindVertexArray(vao);
+				glBindBuffer(GL_ARRAY_BUFFER, vbo);
+				glBufferData(GL_ARRAY_BUFFER, vertices3D.size() * sizeof(vertices3D[0]), vertices3D.data(), GL_STATIC_DRAW);
 
-			glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex2D), 0);
-			glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex2D), (void*)offsetof(Vertex2D, color));
+				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
+				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
 
-			glDrawArrays(GL_QUADS, 0, vertices.size());
-			if (polygon_mode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glDrawArrays(GL_QUADS, 0, vertices3D.size());
+				if (polygon_mode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
+
+			if (render_type == FILL_CUBE) {
+				basic_shader->bind();
+
+				glBindVertexArray(vao);
+				glBindBuffer(GL_ARRAY_BUFFER, vbo);
+				glBufferData(GL_ARRAY_BUFFER, vertices3D.size() * sizeof(vertices3D[0]), vertices3D.data(), GL_STATIC_DRAW);
+
+				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
+				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
+
+				glDrawArrays(GL_QUADS, 0, vertices3D.size());
+			}
 		}
 
-		vertices.clear();
+		if (vertices2D.size() != 0) {
+			if (render_type == UI_LINE) {
+				ui_basic_shader->bind();
+
+				glBindVertexArray(vao);
+				glBindBuffer(GL_ARRAY_BUFFER, vbo);
+				glBufferData(GL_ARRAY_BUFFER, vertices2D.size() * sizeof(vertices2D[0]), vertices2D.data(), GL_STATIC_DRAW);
+
+				glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(Vertex2D), 0);
+				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex2D), (void*)offsetof(Vertex2D, color));
+
+				glDrawArrays(GL_LINES, 0, vertices2D.size());
+			}
+		}
+
+		vertices3D.clear();
+		vertices2D.clear();
 	}
 
 	void RenderMesh(Buffer<GL_ARRAY_BUFFER> *buffer) {
@@ -237,12 +313,11 @@ public:
 			texture_handler->bindTextureUnit(next_tex_index, pair.second);
 		}
 
-		// VAO->bind();
 		glBindVertexArray(vao);
 		buffer->bind();
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex2D), 0);
-		glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex2D), (void*)offsetof(Vertex2D, color));
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
 
 		glDrawElements(GL_TRIANGLES, buffer->element_size*1.5, GL_UNSIGNED_INT, NULL);
 

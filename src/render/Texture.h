@@ -14,16 +14,10 @@ class TextureHandler {
 public:
 	unsigned int MAX_TEXTURE_SLOTS = 5;
 
-private:
+public:
 	TextureHandler() {}
 
-public:
-	static TextureHandler *sharedInstance() {
-		static TextureHandler instance;
-		return &instance;
-	}
-
-	void setup(Shader *shader) {
+	void Init(Shader *shader) {
 		int texture_indices[MAX_TEXTURE_SLOTS];
 
 		for (int i = 0; i != MAX_TEXTURE_SLOTS; i++) {

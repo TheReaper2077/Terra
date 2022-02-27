@@ -4,6 +4,7 @@
 #include "ChunkGeneration.h"
 #include "ChunkManager.h"
 
+#include "Raycasting.h"
 #include "TileRegistry.h"
 #include "render/Renderer.h"
 #include "events/KeyListener.h"
@@ -13,6 +14,7 @@ Renderer *renderer = Renderer::SharedInstance();
 TileRegistry *tile_registry = TileRegistry::SharedInstance();
 Camera *camera = new Camera();
 ChunkManager *chunk_manager = new ChunkManager();
+Ray *ray = new Ray();
 // World *world = world = new World();
 
 Window::Window() {
@@ -41,6 +43,7 @@ void Window::Init() {
 
 	renderer->Init();
 	camera->Init(window);
+	ray->Init(chunk_manager);
 
 	Texture map_sprites = renderer->LoadTexture("D:\\C++\\Ortho Test\\res\\spritesheet\\Spritesheet.PNG");
 
@@ -69,8 +72,12 @@ void Window::Init() {
 	// 		}
 	// 	}
 	// }
-	
-	// chunk_manager->AddBlock(glm::ivec3(0, 0, 0), STONE_BLOCK);
+}
+
+void render_crosshair() {
+	renderer->SetColor(255, 255, 255, 255);
+	renderer->DrawLine(WIDTH/2 - 20, HEIGHT/2, WIDTH/2 + 20, HEIGHT/2);
+	renderer->DrawLine(WIDTH/2, HEIGHT/2 - 20, WIDTH/2, HEIGHT/2 + 20);
 }
 
 void Window::Gameloop() {
@@ -87,7 +94,18 @@ void Window::Gameloop() {
 
 		chunk_manager->Generate();
 		chunk_manager->Mesh();
-		chunk_manager->Render((glm::ivec3)camera->cameraPos);
+		chunk_manager->Render((glm::ivec3)camera->camera_pos);
+		
+		// glm::vec3 tmp = camera->camera_pos + glm::vec3(camera->camera_front.x * 10.0f, camera->camera_front.y * 10.0f, camera->camera_front.z * 10.0f);
+		// renderer->FillCube(tmp, 1, 1, 1);
+		// renderer->SetColor(0, 255, 0, 255);
+		// renderer->FillCube((glm::ivec3)tmp, 1, 1, 1);
+		uint8_t face;
+		ray->Update(camera->camera_pos, camera->camera_front, 20, face);
+		renderer->FillCube(glm::vec3(ray->X - 0.1, ray->Y - 0.1, ray->Z - 0.1), 1.1, 1.1, 1.1, face);
+		// renderer->FillCube(tmp, 1.1, 1.1, 1.1);
+		
+		render_crosshair();
 
 		renderer->Render();
 

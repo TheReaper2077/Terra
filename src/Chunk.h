@@ -9,7 +9,7 @@ struct Chunk {
 	glm::ivec3 id;
 
 	BlockID chunk_blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {AIR_BLOCK};
-	std::vector<Vertex2D> mesh;
+	std::vector<Vertex3D> mesh;
 	Buffer<GL_ARRAY_BUFFER> buffer;
 
 	bool generated;
@@ -25,6 +25,21 @@ struct Chunk {
 		this->top_chunk = false;
 		this->visible = true;
 	}
+	
+	void Add(const glm::ivec3 &pos, const BlockID &block) {
+		if (chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15] == block) return;
+
+		chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15] = block;
+		meshed = false;
+	}
+
+	BlockID &Get(const glm::ivec3 &pos) {
+		return chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15];
+	}
+
+	BlockID &Get(int x, int y, int z) {
+		return chunk_blocks[z & 15][y & 15][x & 15];
+	}
 };
 
 
@@ -38,40 +53,40 @@ void DrawQuad(Chunk *chunk, float x, float y, float z, float w, float h, float d
 	chunk->mesh.reserve(chunk->mesh.size() + 4);
 	
 	if (dir == 0) {
-		chunk->mesh.emplace_back(Vertex2D{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
-		chunk->mesh.emplace_back(Vertex2D{x, y + h, z, tile.tx + tile.tw, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y + h, z, tile.tx, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y + h, z, tile.tx + tile.tw, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y + h, z, tile.tx, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
 	}
 	if (dir == 1) {
-		chunk->mesh.emplace_back(Vertex2D{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
-		chunk->mesh.emplace_back(Vertex2D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tile.tx, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y, z + d, tile.tx, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y + h, z + d, tile.tx, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y, z + d, tile.tx, tile.ty + tile.th, index});
 	}
 	if (dir == 3) {
-		chunk->mesh.emplace_back(Vertex2D{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
-		chunk->mesh.emplace_back(Vertex2D{x, y, z + d, tile.tx + tile.tw, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y, z + d, tile.tx, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y, z + d, tile.tx + tile.tw, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y, z + d, tile.tx, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
 	}
 	if (dir == 2) {
-		chunk->mesh.emplace_back(Vertex2D{x, y + h, z, tile.tx + tile.tw, tile.ty + tile.th, index});
-		chunk->mesh.emplace_back(Vertex2D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tile.tx, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y + h, z, tile.tx, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y + h, z, tile.tx + tile.tw, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y + h, z + d, tile.tx, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y + h, z, tile.tx, tile.ty + tile.th, index});
 	}
 	if (dir == 4) {
-		chunk->mesh.emplace_back(Vertex2D{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
-		chunk->mesh.emplace_back(Vertex2D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x, y + h, z, tile.tx, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x, y, z, tile.tx, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y + h, z, tile.tx, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x, y, z, tile.tx, tile.ty + tile.th, index});
 	}
 	if (dir == 5) {
-		chunk->mesh.emplace_back(Vertex2D{x + w, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y + h, z, tile.tx, tile.ty, index});
-		chunk->mesh.emplace_back(Vertex2D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y + h, z, tile.tx, tile.ty, index});
+		chunk->mesh.emplace_back(Vertex3D{x + w, y, z, tile.tx, tile.ty + tile.th, index});
 	}
 }
 
@@ -239,13 +254,4 @@ void RenderChunk(Chunk *chunk) {
 		// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
 		Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
 	}
-}
-
-void Add(Chunk *chunk, const glm::ivec3 &pos, const BlockID &block) {
-	chunk->chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15] = block;
-	if (chunk->meshed) chunk->meshed = false;
-}
-
-BlockID &Get(Chunk *chunk, const glm::ivec3 &pos) {
-	return chunk->chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15];
 }

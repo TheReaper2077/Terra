@@ -11,15 +11,15 @@ private:
 	MouseListener() {}
 
 public:
-	static MouseListener *sharedInstance() {
+	static MouseListener *SharedInstance() {
 		static MouseListener instance;
 		return &instance;
 	}
 
 	static void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-		sharedInstance()->moved = true;
-		sharedInstance()->xpos = xpos;
-		sharedInstance()->ypos = ypos;
+		SharedInstance()->moved = true;
+		SharedInstance()->xpos = xpos;
+		SharedInstance()->ypos = ypos;
 	}
 
 	bool isMoved() {
