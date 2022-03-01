@@ -31,13 +31,13 @@ public:
 		bind();
 		curr_size = data.size()*sizeof(data[0]);
 		element_size = data.size();
-		glBufferData(Target, curr_size, data.data(), GL_STATIC_DRAW);
 
-		if (curr_size > used_size)
+		if (curr_size > used_size) {
+			glBufferData(Target, curr_size, data.data(), GL_DYNAMIC_DRAW);
 			used_size = curr_size;
-		// } else {
-		// 	glBufferSubData(Target, offset, curr_size, data.data());
-		// }
+		} else {
+			glBufferSubData(Target, offset, curr_size, data.data());
+		}
 	}
 
 	template <typename T>

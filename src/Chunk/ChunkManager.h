@@ -209,6 +209,7 @@ public:
 		for (auto& chunk: mesh_request) {
 			if (chunk->mesh.size()) {
 				if (!chunk->buffer.init) chunk->buffer.Init();
+
 				chunk->buffer.Add(chunk->mesh);
 				chunk->mesh.clear();
 			}
