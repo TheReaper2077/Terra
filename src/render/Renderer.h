@@ -173,8 +173,25 @@ public:
 		this->render_type = render_type;
 	}
 
+	void RenderLine(float x0, float y0, float z0, float x1, float y1, float z1, RenderType render_type) {
+		if (this->render_type != render_type) {
+			Render();
+		}
+
+		vertices3D.reserve(2 + vertices3D.size());
+
+		vertices3D.emplace_back(Vertex3D{x0, y0, z0, color});
+		vertices3D.emplace_back(Vertex3D{x1, y1, z1, color});
+
+		this->render_type = render_type;
+	}
+
 	void DrawLine(float x0, float y0, float x1, float y1) {
 		RenderLine(x0, y0, x1, y1, UI_LINE);
+	}
+
+	void DrawLine(float x0, float y0, float z0, float x1, float y1, float z1) {
+		RenderLine(x0, y0, z0, x1, y1, z1, LINE);
 	}
 
 	void RenderCube(float x, float y, float z, float w, float h, float d, RenderType render_type, uint8_t faces) {
@@ -270,6 +287,10 @@ public:
 			if (render_type == FILL_CUBE) {
 				basic_shader->bind();
 
+				if (curr_quads > max_quads) {
+					IncreaseRectIndices();
+				}
+
 				glBindVertexArray(vao);
 				glBindBuffer(GL_ARRAY_BUFFER, vbo);
 				glBufferData(GL_ARRAY_BUFFER, vertices3D.size() * sizeof(vertices3D[0]), vertices3D.data(), GL_STATIC_DRAW);
@@ -277,7 +298,22 @@ public:
 				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
 				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
 
-				glDrawArrays(GL_QUADS, 0, vertices3D.size());
+				glDrawElements(GL_TRIANGLES, vertices3D.size()*1.5, GL_UNSIGNED_INT, NULL);
+
+				curr_quads = 0;
+			}
+
+			if (render_type == LINE) {
+				basic_shader->bind();
+
+				glBindVertexArray(vao);
+				glBindBuffer(GL_ARRAY_BUFFER, vbo);
+				glBufferData(GL_ARRAY_BUFFER, vertices3D.size() * sizeof(vertices3D[0]), vertices3D.data(), GL_STATIC_DRAW);
+
+				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
+				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
+
+				glDrawArrays(GL_TRIANGLES, 0, vertices3D.size());
 			}
 		}
 

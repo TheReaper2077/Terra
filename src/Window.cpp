@@ -1,7 +1,6 @@
 #include "Window.h"
 #include "Camera.h"
 
-#include "ChunkGeneration.h"
 #include "ChunkManager.h"
 
 #include "Raycasting.h"
@@ -10,11 +9,11 @@
 #include "events/KeyListener.h"
 #include "events/MouseListener.h"
 
-Renderer *renderer = Renderer::SharedInstance();
-TileRegistry *tile_registry = TileRegistry::SharedInstance();
 Camera *camera = new Camera();
 ChunkManager *chunk_manager = new ChunkManager();
 Ray *ray = new Ray();
+Renderer *renderer = Renderer::SharedInstance();
+TileRegistry *tile_registry = TileRegistry::SharedInstance();
 // World *world = world = new World();
 
 Window::Window() {
@@ -64,14 +63,6 @@ void Window::Init() {
 	tile_registry->RegisterBlock(GRASS_BLOCK, BlockTiles{GRASS, GRASS, GRASS_TOP, DIRT, GRASS, GRASS});
 	tile_registry->RegisterBlock(STONE_BLOCK, BlockTiles{STONE, STONE, STONE, STONE, STONE, STONE});
 	tile_registry->RegisterBlock(DIRT_BLOCK, BlockTiles{DIRT, DIRT, DIRT, DIRT, DIRT, DIRT});
-	
-	// for (int z = 0; z != 5; z++) {
-	// 	for (int x = 0; x != 5; x++) {
-	// 		for (int y = 0; y != 5; y++) {
-	// 			chunk_manager->GetChunk(glm::ivec3(x*16, y*16, z*16));
-	// 		}
-	// 	}
-	// }
 }
 
 void render_crosshair() {
@@ -96,14 +87,34 @@ void Window::Gameloop() {
 		chunk_manager->Mesh();
 		chunk_manager->Render((glm::ivec3)camera->camera_pos);
 		
-		// glm::vec3 tmp = camera->camera_pos + glm::vec3(camera->camera_front.x * 10.0f, camera->camera_front.y * 10.0f, camera->camera_front.z * 10.0f);
+		// glm::vec3 tmp = camera->camera_pos + camera->camera_front * 20.0f;
 		// renderer->FillCube(tmp, 1, 1, 1);
-		// renderer->SetColor(0, 255, 0, 255);
 		// renderer->FillCube((glm::ivec3)tmp, 1, 1, 1);
+
 		uint8_t face;
 		ray->Update(camera->camera_pos, camera->camera_front, 20, face);
-		renderer->FillCube(glm::vec3(ray->X - 0.1, ray->Y - 0.1, ray->Z - 0.1), 1.1, 1.1, 1.1, face);
+		// renderer->FillCube(ray->voxel, 1.5, 1.5, 1.5, face);
+		
+		// renderer->FillCube(glm::ivec3(ray->X, ray->Y, ray->Z), 1.1, 1.1, 1.1);
+
+		// glm::vec3 ray_nds = glm::vec3(0, 0, 0.0f);
+		// glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, 0.0, 1.0);
+		// glm::vec4 ray_eye = glm::inverse(renderer->projection) * ray_clip;
+		// ray_eye = glm::vec4(ray_eye.x, ray_eye.y, ray_eye.z, 0.0);
+		// glm::vec3 ray_wor = (glm::inverse(renderer->view) * ray_eye);
+
+		// glm::vec3 res = glm::inverse(renderer->projection) * glm::inverse(renderer->view) * glm::inverse(renderer->model) * glm::vec4(0, 0, -1.0f, 1.0f);
+
+		renderer->SetColor(0, 255, 0, 255);
 		// renderer->FillCube(tmp, 1.1, 1.1, 1.1);
+		// don't forget to normalise the vector at some point
+		// ray_wor = glm::normalize(ray_wor);
+
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+			chunk_manager->ChangeBlock(glm::ivec3(ray->X, ray->Y, ray->Z), AIR_BLOCK);
+		}
+
+		// std::cout << camera->camera_front.x << " " << camera->camera_front.y << " " << camera->camera_front.z << "\n";
 		
 		render_crosshair();
 

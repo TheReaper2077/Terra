@@ -33,6 +33,20 @@ struct Chunk {
 		meshed = false;
 	}
 
+	void Add(const glm::ivec3 &pos, const BlockID &block, bool &front, bool &back, bool &top, bool &bottom, bool &left, bool &right) {
+		if (chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15] == block) return;
+
+		chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15] = block;
+		meshed = false;
+
+		front = ((pos.z & 15) == 0);
+		back = ((pos.z & 15) == 15);
+		top = ((pos.y & 15) == 15);
+		bottom = ((pos.y & 15) == 0);
+		left = ((pos.x & 15) == 0);
+		right = ((pos.x & 15) == 15);
+	}
+
 	BlockID &Get(const glm::ivec3 &pos) {
 		return chunk_blocks[pos.z & 15][pos.y & 15][pos.x & 15];
 	}

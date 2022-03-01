@@ -5,9 +5,6 @@
 #include "events/MouseListener.h"
 #include "render/Renderer.h"
 
-// Most of the code here is shamelessly stolen from www.learnopengl.com
-// WTF was I supposed to do ? I'm only 16, I don't even know Calcus, Linear Algerbra and all that bullshit
-
 class Camera {
 public:
 	glm::vec3 camera_pos;
@@ -22,7 +19,7 @@ public:
 
 	bool firstMouse = true;
 	float yaw = -90.0, pitch = 0;
-	float lastX = 400, lastY = 300;
+	float lastX = WIDTH/2, lastY = HEIGHT/2;
 
 public:
 	void Init(GLFWwindow *window) {

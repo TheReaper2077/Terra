@@ -48,8 +48,62 @@ public:
 		return false;
 	}
 
-	void ChangeBlock(glm::ivec3 pos) {
-		// if (pos.)
+	void ChangeBlock(glm::ivec3 pos, BlockID id) {
+		auto* chunk = GetChunkAvailable(pos);
+
+		pos &= 15;
+		bool front_key, back_key, top_key, bottom_key, left_key, right_key;
+
+		if (chunk != nullptr) {
+			chunk->Add(pos, id, front_key, back_key, top_key, bottom_key, left_key, right_key);
+
+			if (!chunk->meshed) {
+				mesh_request.push_back(chunk);
+
+				if (front_key) {
+					auto* front = GetChunkAvailable(glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z - 16));
+					if (front != nullptr) {
+						front->meshed = false;
+						mesh_request.push_back(front);
+					}
+				}
+				if (back_key) {
+					auto* back = GetChunkAvailable(glm::ivec3(chunk->id.x, chunk->id.y, chunk->id.z + 16));
+					if (back != nullptr) {
+						back->meshed = false;
+						mesh_request.push_back(back);
+					}
+				}
+				if (top_key) {
+					auto* top = GetChunkAvailable(glm::ivec3(chunk->id.x, chunk->id.y + 16, chunk->id.z));
+					if (top != nullptr) {
+						top->meshed = false;
+						mesh_request.push_back(top);
+					}
+				}
+				if (bottom_key) {
+					auto* bottom = GetChunkAvailable(glm::ivec3(chunk->id.x, chunk->id.y - 16, chunk->id.z));
+					if (bottom != nullptr) {
+						bottom->meshed = false;
+						mesh_request.push_back(bottom);
+					}
+				}
+				if (left_key) {
+					auto* left = GetChunkAvailable(glm::ivec3(chunk->id.x - 16, chunk->id.y, chunk->id.z));
+					if (left != nullptr) {
+						left->meshed = false;
+						mesh_request.push_back(left);
+					}
+				}
+				if (right_key) {
+					auto* right = GetChunkAvailable(glm::ivec3(chunk->id.x + 16, chunk->id.y, chunk->id.z));
+					if (right != nullptr) {
+						right->meshed = false;
+						mesh_request.push_back(right);
+					}
+				}
+			}
+		}
 	}
 
 	void Generate() {

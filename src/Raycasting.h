@@ -13,7 +13,7 @@ public:
 	float tMaxX = 0, tMaxY = 0, tMaxZ = 0;
 	float tDeltaX = 0, tDeltaY = 0, tDeltaZ = 0;
 	
-	glm::vec3 camera_pos, direction_normalized;
+	glm::vec3 pos, direction_normalized;
 
 	ChunkManager *chunk_manager;
 
@@ -22,57 +22,32 @@ public:
 		this->chunk_manager = chunk_manager;
 	}
 
-	float Intbound(int s, float ds) {
-		if (ds < 0) return Intbound(-s, -ds);
-		s = mod(s, 1);
-		return (float)(1 - s)/(float)ds;
+	float Intbound(float s, float ds) {
+		return ((ds > 0) ? ceil(s)-s: s-floor(s)) / abs(ds);
 	}
 
-	float mod(int value, int modulus) {
-		return (value % modulus + modulus) % modulus;
-	}
-
-	// // function intbounds(s,ds) { return (ds > 0? Math.ceil(s)-s: s-Math.floor(s)) / Math.abs(ds); }
-	// int ceil(float value) {
-	// 	// if ((int)value < value) return (int)value + 1;
-	// 	if (value < 0) {
-	// 		return (int)value;
-	// 	}
-	// 	return (int)value + 1;
-	// }
-
-	// int floor(float value) {
-	// 	// if ((int)value < value) return (int)value - 1;
-	// 	if (value < 0) {
-	// 		return (int)value - 1;
-	// 	}
-	// 	return (int)value;
-	// }
-
-	// float Intbound(float s, float ds) {
-	// 	return ((ds > 0) ? ceil(s)-s: s-floor(s)) / abs(ds);
-	// }
-
-	void Update(glm::vec3 &camera_pos, glm::vec3 &dir, float radius, uint8_t &face) {
+	void Update(glm::vec3 &pos, glm::vec3 &dir, float radius, uint8_t &face) {
 		float dx = dir.x;
 		float dy = dir.y;
 		float dz = dir.z;
 
-		stepX = dx/abs(dx);
-		stepY = dy/abs(dy);
-		stepZ = dz/abs(dz);
+		stepX = (dx > 0) ? 1: (dx < 0) ? -1: 0;
+		stepY = (dy > 0) ? 1: (dy < 0) ? -1: 0;
+		stepZ = (dz > 0) ? 1: (dz < 0) ? -1: 0;
 
-		X = (int)camera_pos.x;
-		Y = (int)camera_pos.y;
-		Z = (int)camera_pos.z;
+		// std::cout << stepX << ' ' << stepY << ' ' << stepZ << '\n';
+
+		X = (stepX < 0) ? ceil(pos.x): floor(pos.x) - 1;
+		Y = (stepY < 0) ? ceil(pos.y): floor(pos.y) - 1;
+		Z = (stepZ < 0) ? ceil(pos.z): floor(pos.z) - 1;
 
 		tMaxX = Intbound(stepX, dx);
 		tMaxY = Intbound(stepY, dy);
 		tMaxZ = Intbound(stepZ, dz);
 
-		tDeltaX = stepX/dx;
-		tDeltaY = stepY/dy;
-		tDeltaZ = stepZ/dz;
+		tDeltaX = (float)stepX/dx;
+		tDeltaY = (float)stepY/dy;
+		tDeltaZ = (float)stepZ/dz;
 
 		radius /= sqrt(dx*dx + dy*dy + dz*dz);
 
@@ -80,10 +55,11 @@ public:
 			if (dx == 0 && dy == 0 && dz == 0) break;
 
 			if (chunk_manager->BlockSolid(glm::ivec3(X, Y, Z))) {
+				// if (stepX > 0) X -= 1;
+				// if (stepY > 0) Y -= 1;
+				// if (stepZ > 0) Z -= 1;
 				break;
 			}
-
-			face = 0;
 
 			if(tMaxX < tMaxY) {
 				if(tMaxX < tMaxZ) {
@@ -93,9 +69,9 @@ public:
 					tMaxX += tDeltaX;
 
 					if (stepX) {
-						face |= 0b010000;
+						face = 0b010000;
 					} else {
-						face |= 0b100000;
+						face = 0b100000;
 					}
 				} else {
 					if (tMaxZ > radius) break;
@@ -104,9 +80,9 @@ public:
 					tMaxZ += tDeltaZ;
 
 					if (stepZ) {
-						face |= 0b000001;
+						face = 0b000010;
 					} else {
-						face |= 0b000010;
+						face = 0b000001;
 					}
 				}
 			} else {
@@ -117,9 +93,9 @@ public:
 					tMaxY += tDeltaY;
 
 					if (stepY) {
-						face |= 0b000100;
+						face = 0b000100;
 					} else {
-						face |= 0b001000;
+						face = 0b001000;
 					}
 				} else {
 					if (tMaxZ > radius) break;
@@ -128,9 +104,9 @@ public:
 					tMaxZ += tDeltaZ;
 
 					if (stepZ) {
-						face |= 0b000001;
+						face = 0b000010;
 					} else {
-						face |= 0b000010;
+						face = 0b000001;
 					}
 				}
 			}
