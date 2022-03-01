@@ -1,7 +1,7 @@
 #include "Window.h"
 #include "Camera.h"
 
-#include "ChunkManager.h"
+#include "Chunk/ChunkManager.h"
 
 #include "Raycasting.h"
 #include "TileRegistry.h"
@@ -41,6 +41,7 @@ void Window::Init() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 
 	renderer->Init();
 	camera->Init(window);
@@ -62,7 +63,9 @@ void Window::Init() {
 	auto REDSTONE_ORE = tile_registry->RegisterTile("REDSTONE_ORE", Tile{5*80, 1*80, 80, 80, map_sprites});
 	auto GRASS_TOP = tile_registry->RegisterTile("GRASS_TOP", Tile{2*80, 2*80, 80, 80, map_sprites});
 
+	// tile_registry->RegisterBlock(GRASS_BLOCK, BlockTiles{GRASS, GRASS, GRASS_TOP, DIRT, GRASS, GRASS});
 	tile_registry->RegisterBlock(GRASS_BLOCK, BlockTiles{GRASS, GRASS, GRASS_TOP, DIRT, GRASS, GRASS});
+	tile_registry->RegisterBlock(GLASS_BLOCK, BlockTiles{GLASS, GLASS, GLASS, GLASS, GLASS, GLASS});
 	tile_registry->RegisterBlock(STONE_BLOCK, BlockTiles{STONE, STONE, STONE, STONE, STONE, STONE});
 	tile_registry->RegisterBlock(DIRT_BLOCK, BlockTiles{DIRT, DIRT, DIRT, DIRT, DIRT, DIRT});
 }
@@ -91,7 +94,7 @@ void Window::Gameloop() {
 		const auto &t_start = std::chrono::high_resolution_clock::now();
 
 		glfwPollEvents();
-		glClearColor(0, 0, 0, 1);
+		glClearColor(0, 0.5, 1.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		camera->Update(dt);
@@ -112,7 +115,7 @@ void Window::Gameloop() {
 		ray->Update(camera->camera_pos, camera->camera_front, 20, face);
 		// renderer->FillCube(ray->voxel, 1.5, 1.5, 1.5, face);
 		
-		// renderer->FillCube(glm::ivec3(ray->X, ray->Y, ray->Z), 1.1, 1.1, 1.1);
+		// renderer->FillCube(glm::vec3((float)ray->X - 0.1, (float)ray->Y - 0.1, (float)ray->Z - 0.1), 1.1, 1.1, 1.1);
 
 		// glm::vec3 ray_nds = glm::vec3(0, 0, 0.0f);
 		// glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, 0.0, 1.0);
@@ -130,6 +133,9 @@ void Window::Gameloop() {
 
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
 			chunk_manager->ChangeBlock(glm::ivec3(ray->X, ray->Y, ray->Z), AIR_BLOCK);
+		}
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
+			chunk_manager->ChangeBlock(glm::ivec3(ray->X, ray->Y, ray->Z), GLASS_BLOCK);
 		}
 
 		// std::cout << camera->camera_front.x << " " << camera->camera_front.y << " " << camera->camera_front.z << "\n";

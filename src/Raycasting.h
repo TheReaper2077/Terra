@@ -1,7 +1,7 @@
 #pragma once
 
 #include "define.h"
-#include "ChunkManager.h"
+#include "Chunk/ChunkManager.h"
 
 class Ray {
 private:
@@ -24,6 +24,8 @@ public:
 
 	float Intbound(float s, float ds) {
 		return ((ds > 0) ? ceil(s)-s: s-floor(s)) / abs(ds);
+		// 1 / (1 - ds)
+		// return 1.0 / (1.0 - ds);
 	}
 
 	void Update(glm::vec3 &pos, glm::vec3 &dir, float radius, uint8_t &face) {

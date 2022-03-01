@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ECS/Registry.h"
-#include "Components/Components.h"
-#include "render/Renderer.h"
-#include "TileRegistry.h"
+#include "../ECS/Registry.h"
+#include "../Components/Components.h"
+#include "../render/Renderer.h"
+#include "../TileRegistry.h"
 
 struct Chunk {
 	glm::ivec3 id;
@@ -116,88 +116,90 @@ void MeshChunk(Chunk *chunk, Chunk *front, Chunk *back, Chunk *top, Chunk *botto
 	for (int z = 0; z != CHUNK_SIZE; z++) {
 		for (int y = 0; y != CHUNK_SIZE; y++) {
 			for (int x = 0; x != CHUNK_SIZE; x++) {
-					auto& block = chunk_blocks[z][y][x];
-					if (block == AIR_BLOCK) continue;
+				auto& block = chunk_blocks[z][y][x];
+				if (block == AIR_BLOCK) continue;
 
-					auto& tiles = TileRegistry::SharedInstance()->GetBlock(block);
+				auto& tiles = TileRegistry::SharedInstance()->GetBlock(block);
 
-					if (z - 1 >= 0) {
-						if (chunk_blocks[z - 1][y][x] == AIR_BLOCK) {
+				if (z - 1 >= 0) {
+					if (chunk_blocks[z - 1][y][x] == AIR_BLOCK) {
+						DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.front, 0);
+					}
+				} else {
+					if (front != nullptr) {
+						if (front->chunk_blocks[15][y][x] == AIR_BLOCK) {
 							DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.front, 0);
-						}
-					} else {
-						if (front != nullptr) {
-							if (front->chunk_blocks[15][y][x] == AIR_BLOCK) {
-								DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.front, 0);
-								visible = true;
-							}
+							visible = true;
 						}
 					}
-					if (z + 1 < 16) {
-						if (chunk_blocks[z + 1][y][x] == AIR_BLOCK) {
+				}
+				if (z + 1 < 16) {
+					if (chunk_blocks[z + 1][y][x] == AIR_BLOCK) {
+						DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.back, 1);
+					}
+				} else {
+					if (back != nullptr) {
+						if (back->chunk_blocks[0][y][x] == AIR_BLOCK) {
 							DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.back, 1);
-						}
-					} else {
-						if (back != nullptr) {
-							if (back->chunk_blocks[0][y][x] == AIR_BLOCK) {
-								DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.back, 1);
-								visible = true;
-							}
+							visible = true;
 						}
 					}
+				}
 
-					if (y - 1 >= 0) {
-						if (chunk_blocks[z][y - 1][x] == AIR_BLOCK) {
+				if (y - 1 >= 0) {
+					if (chunk_blocks[z][y - 1][x] == AIR_BLOCK) {
+						DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.bottom, 3);
+					}
+				} else {
+					if (bottom != nullptr) {
+						if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK) {
 							DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.bottom, 3);
-						}
-					} else {
-						if (bottom != nullptr) {
-							if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK) {
-								DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.bottom, 3);
-								visible = true;
-							}
+							visible = true;
 						}
 					}
-					if (y + 1 < 16) {
-						if (chunk_blocks[z][y + 1][x] == AIR_BLOCK) {
+				}
+				if (y + 1 < 16) {
+					if (chunk_blocks[z][y + 1][x] == AIR_BLOCK) {
+						DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.top, 2);
+					}
+				} else {
+					if (top != nullptr) {
+						if (top->chunk_blocks[z][0][x] == AIR_BLOCK) {
 							DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.top, 2);
-						}
-					} else {
-						if (top != nullptr) {
-							if (top->chunk_blocks[z][0][x] == AIR_BLOCK) {
-								DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.top, 2);
-								visible = true;
-							}
+							visible = true;
 						}
 					}
+				}
 
-					if (x - 1 >= 0) {
-						if (chunk_blocks[z][y][x - 1] == AIR_BLOCK) {
+				if (x - 1 >= 0) {
+					if (chunk_blocks[z][y][x - 1] == AIR_BLOCK) {
+						DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 4);
+					}
+				} else {
+					if (left != nullptr) {
+						if (left->chunk_blocks[z][y][15] == AIR_BLOCK) {
 							DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 4);
-						}
-					} else {
-						if (left != nullptr) {
-							if (left->chunk_blocks[z][y][15] == AIR_BLOCK) {
-								DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 4);
-								visible = true;
-							}
+							visible = true;
 						}
 					}
-					if (x + 1 < 16) {
-						if (chunk_blocks[z][y][x + 1] == AIR_BLOCK) {
-							DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.right, 5);
-						}
-					} else {
-						if (right != nullptr) {
-							if (right->chunk_blocks[z][y][0] == AIR_BLOCK) {
-								DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 5);
-								visible = true;
-							}
+				}
+				if (x + 1 < 16) {
+					if (chunk_blocks[z][y][x + 1] == AIR_BLOCK) {
+						DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.right, 5);
+					}
+				} else {
+					if (right != nullptr) {
+						if (right->chunk_blocks[z][y][0] == AIR_BLOCK) {
+							DrawQuad(chunk, id.x + x, id.y + y, id.z + z, 1, 1, 1, tiles.left, 5);
+							visible = true;
 						}
 					}
+				}
 			}
 		}
 	}
+
+	if (chunk->mesh.size() == 0) visible = false;
 }
 
 void GenerateChunk(Chunk *chunk) {
@@ -220,15 +222,16 @@ void GenerateChunk(Chunk *chunk) {
 	
 	for (int z = 0; z != 16; z++) {
 		for (int x = 0; x != 16; x++) {
-			float value = glm::perlin(glm::vec2{(id.x + x) / 64.0, (id.z + z) / 64.0});
+			float value = glm::perlin(glm::vec2{(id.x + x) / 160.0, (id.z + z) / 160.0});
 			value = (value + 1) / 2;
-			value *= 32 + 32;
+			value *= 128 + 128;
 			if (value > top_value) {
 				top_value = value;
 			}
 
 			int idx = 0;	
 			for (int y = id.y; y <= value; y++) {
+				if (chunk->chunk_blocks[z][idx][x] != AIR_BLOCK) continue;
 				if (idx > 15) {
 					i++;
 					break;
@@ -251,22 +254,18 @@ void GenerateChunk(Chunk *chunk) {
 }
 
 void RenderChunk(Chunk *chunk) {
-	auto& chunk_blocks = chunk->chunk_blocks;
 	auto& id = chunk->id;
 	auto& visible = chunk->visible;
 	auto& top_chunk = chunk->top_chunk;
-	auto& generated = chunk->generated;
 
 	if (visible && chunk->meshed && chunk->buffer.init) {
 		// Renderer::SharedInstance()->SetModel(::ivec3()
 		Renderer::SharedInstance()->RenderMesh(&chunk->buffer);
 		// Renderer::SharedInstance()->RenderMesh(chunk->mesh);
 	}
-	// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
 
-	if (top_chunk) {
-		// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
-
-		Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
+	if (top_chunk && chunk->meshed && chunk->buffer.init && visible) {
+		Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
+		// Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
 	}
 }

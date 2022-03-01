@@ -2,6 +2,6 @@
 
 in vec4 f_Color;
 
-void main() {
+void main() {	
 	gl_FragColor = f_Color;
 }

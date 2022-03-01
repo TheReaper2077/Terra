@@ -8,6 +8,7 @@ using TileID = uint32_t;
 
 enum BlockID {
 	AIR_BLOCK,
+	GLASS_BLOCK,
 	GRASS_BLOCK,
 	STONE_BLOCK,
 	DIRT_BLOCK,

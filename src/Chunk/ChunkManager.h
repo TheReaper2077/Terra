@@ -1,12 +1,12 @@
 #pragma once
 
-#include "define.h"
-#include "TileRegistry.h"
+#include "../define.h"
+#include "../TileRegistry.h"
 #include "ChunkColumn.h"
 #include "Chunk.h"
 
 class ChunkManager {
-	std::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> chunk_ptr_map;
+	std::unordered_map<glm::ivec2, std::shared_ptr<ChunkColumn>> chunk_column_map;
 
 	glm::ivec3 last_camera_chunk_pos;
 
@@ -15,10 +15,6 @@ class ChunkManager {
 
 	std::vector<Chunk*> mesh_request;
 	std::vector<std::thread> mesh_threads;
-
-	std::unordered_map<glm::ivec2, std::shared_ptr<ChunkColumn>> chunk_column_map;
-	std::vector<glm::ivec2> gen_column_request;
-	// std::vector<glm::ivec2> gen_column_request;
 
 public:
 	ChunkManager() {}
@@ -44,28 +40,16 @@ public:
 	Chunk *GetChunk(const glm::ivec3 pos) {
 		auto id = (pos & ~15);
 
-		// if(chunk_ptr_map.find(id) == chunk_ptr_map.end())
-		// 	chunk_ptr_map[id] = std::make_shared<Chunk>(id);
-
-		// return chunk_ptr_map[id].get();
-		return GetChunkColumn(glm::ivec2(id.x, id.y))->GetChunk(id.z);
+		return GetChunkColumn(glm::ivec2(id.x, id.z))->GetChunk(id.y);
 	}
 
 	Chunk *GetChunkAvailable(const glm::ivec3 pos) {
 		auto id = (pos & ~15);
 
-		// if(chunk_ptr_map.find(id) != chunk_ptr_map.end())
-		// 	return chunk_ptr_map[id].get();
-
-		// return nullptr;
-		auto* column =  GetChunkColumnAvailable(glm::ivec2(id.x, id.y));
+		auto* column = GetChunkColumn(glm::ivec2(id.x, id.z));
 		if (column != nullptr) 
-			return column->GetChunkAvailable(id.z);
+			return column->GetChunkAvailable(id.y);
 		return nullptr;
-	}
-
-	bool ChunkPresent(const glm::ivec3 &pos) {
-		return (chunk_ptr_map.find(pos & ~15) == chunk_ptr_map.end());
 	}
 
 	bool BlockSolid(glm::ivec3 pos) {
@@ -79,8 +63,15 @@ public:
 	void ChangeBlock(glm::ivec3 pos, BlockID id) {
 		auto* chunk = GetChunkAvailable(pos);
 
-		pos &= 15;
 		bool front_key, back_key, top_key, bottom_key, left_key, right_key;
+
+		if (id != AIR_BLOCK) {
+			pos.y++;
+
+			chunk = GetChunk(pos);
+		}
+		
+		// pos &= 15;
 
 		if (chunk != nullptr) {
 			chunk->Add(pos, id, front_key, back_key, top_key, bottom_key, left_key, right_key);
@@ -140,9 +131,10 @@ public:
 
 			auto id = generate_request[generate_request.size() - i - 1];
 
-			if (GetChunkAvailable(id) != nullptr) continue;
-
 			auto* chunk = GetChunk(id);
+
+			if (chunk->generated) continue;
+			
 			mesh_request.push_back(chunk);
 
 			generate_threads.push_back(std::thread(&GenerateChunk, chunk));
@@ -226,12 +218,6 @@ public:
 		mesh_request.clear();
 	}
 
-	void Render() {
-		for (auto& chunk: chunk_ptr_map) {
-			RenderChunk(chunk.second.get());
-		}
-	}
-
 	void Render(const glm::ivec3 &camera) {
 		auto pos = (camera & ~15);
 
@@ -239,33 +225,43 @@ public:
 			last_camera_chunk_pos = pos;
 		}
 
-		for (int z = -12;  z != 12; z++) {
-			for (int x = -12;  x != 12; x++) {
+		for (int z = -16;  z != 16; z++) {
+			for (int x = -16;  x != 16; x++) {
 				bool top = false;
 
-				for (int y = 0; true; y++) {
-					glm::ivec3 n_id = glm::ivec3(pos.x + x*16, y*16, pos.z + z*16);
-					auto* chunk = GetChunkAvailable(n_id);
+				auto* column = GetChunkColumn(glm::ivec2(pos.x + x*16, pos.z + z*16));
 
-					if (chunk == nullptr) {
-						generate_request.push_back(n_id);
-						break;
+				if (!column->top_found) {
+					for (int y = 0; true; y++) {
+						glm::ivec3 n_id = glm::ivec3(pos.x + x*16, y*16, pos.z + z*16);
+						auto* chunk = GetChunkAvailable(n_id);
+
+						if (chunk == nullptr) {
+							generate_request.push_back(n_id);
+							break;
+						} else if (!chunk->generated) {
+							generate_request.push_back(n_id);
+							break;
+						}
+
+						if (top) {
+							column->top_found = true;
+							break;
+						}
+						if (!top) top = chunk->top_chunk;
+						if (!chunk->meshed) continue;
+						// RenderChunk(chunk);
 					}
-
-					if (top) break;
-					if (!top) top = chunk->top_chunk;
-
-					RenderChunk(chunk);
 				}
-				// glm::ivec2 id = glm::ivec2(x, z);
-				// auto* column = GetChunkColumnAvailable(id);
-				// if (column != nullptr) {
-				// 	if (!column->Render()) {
-				// 		generate_request.push_back(column->id);
+
+				// glm::ivec3 id = glm::ivec3(x*16, 0, z*16);
+				// 	if (!column->top_found) {
+				// 		column->id.y += 1;
+				// 		generate_request.push_back(glm::ivec3(column->id.x, column->id.y*16, column->id.z));
 				// 	}
+				column->Render();
 				// } else {
-				// 	generate_request.push_back(glm::ivec3(id.x, id.y, 0));
-				// }
+				// 	generate_request.push_back(id);
 			}
 		}
 	}
