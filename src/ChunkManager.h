@@ -2,6 +2,7 @@
 
 #include "define.h"
 #include "TileRegistry.h"
+#include "ChunkColumn.h"
 #include "Chunk.h"
 
 class ChunkManager {
@@ -15,24 +16,51 @@ class ChunkManager {
 	std::vector<Chunk*> mesh_request;
 	std::vector<std::thread> mesh_threads;
 
+	std::unordered_map<glm::ivec2, std::shared_ptr<ChunkColumn>> chunk_column_map;
+	std::vector<glm::ivec2> gen_column_request;
+	// std::vector<glm::ivec2> gen_column_request;
+
 public:
 	ChunkManager() {}
+
+	ChunkColumn *GetChunkColumn(const glm::ivec2 pos) {
+		auto id = (pos & ~15);
+
+		if(chunk_column_map.find(id) == chunk_column_map.end())
+			chunk_column_map[id] = std::make_shared<ChunkColumn>(id);
+
+		return chunk_column_map[id].get();
+	}
+
+	ChunkColumn *GetChunkColumnAvailable(const glm::ivec2 pos) {
+		auto id = (pos & ~15);
+
+		if(chunk_column_map.find(id) != chunk_column_map.end())
+			return chunk_column_map[id].get();
+
+		return nullptr;
+	}
 
 	Chunk *GetChunk(const glm::ivec3 pos) {
 		auto id = (pos & ~15);
 
-		if(chunk_ptr_map.find(id) == chunk_ptr_map.end())
-			chunk_ptr_map[id] = std::make_shared<Chunk>(id);
+		// if(chunk_ptr_map.find(id) == chunk_ptr_map.end())
+		// 	chunk_ptr_map[id] = std::make_shared<Chunk>(id);
 
-		return chunk_ptr_map[id].get();
+		// return chunk_ptr_map[id].get();
+		return GetChunkColumn(glm::ivec2(id.x, id.y))->GetChunk(id.z);
 	}
 
 	Chunk *GetChunkAvailable(const glm::ivec3 pos) {
 		auto id = (pos & ~15);
 
-		if(chunk_ptr_map.find(id) != chunk_ptr_map.end())
-			return chunk_ptr_map[id].get();
+		// if(chunk_ptr_map.find(id) != chunk_ptr_map.end())
+		// 	return chunk_ptr_map[id].get();
 
+		// return nullptr;
+		auto* column =  GetChunkColumnAvailable(glm::ivec2(id.x, id.y));
+		if (column != nullptr) 
+			return column->GetChunkAvailable(id.z);
 		return nullptr;
 	}
 
@@ -229,6 +257,15 @@ public:
 
 					RenderChunk(chunk);
 				}
+				// glm::ivec2 id = glm::ivec2(x, z);
+				// auto* column = GetChunkColumnAvailable(id);
+				// if (column != nullptr) {
+				// 	if (!column->Render()) {
+				// 		generate_request.push_back(column->id);
+				// 	}
+				// } else {
+				// 	generate_request.push_back(glm::ivec3(id.x, id.y, 0));
+				// }
 			}
 		}
 	}
