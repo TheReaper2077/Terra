@@ -266,6 +266,7 @@ void RenderChunk(Chunk *chunk) {
 
 	if (top_chunk) {
 		// Renderer::SharedInstance()->DrawCube(id, 16, 16, 16);
+		
 		Renderer::SharedInstance()->DrawCube(glm::ivec3(id.x + 1, id.y + 1, id.z + 1), 14, 14, 14);
 	}
 }

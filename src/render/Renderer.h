@@ -7,6 +7,7 @@
 #include "Shader.h"
 
 enum RenderType {
+	NONE,
 	LINE, POINT,
 	FILL_TRIANGLE, DRAW_TRIANGLE,
 	TEXTURE_RECT, FILL_RECT, DRAW_RECT,
@@ -268,9 +269,10 @@ public:
 		return index_tex_map[texture->id];
 	}
 
-	void Render() {
+	void Render(RenderType r_type = NONE) {
+		if (r_type == NONE) r_type = render_type;
 		if (vertices3D.size() != 0) {
-			if (render_type == DRAW_CUBE && !polygon_mode) {
+			if (r_type == DRAW_CUBE && !polygon_mode) {
 				basic_shader->bind();
 
 				glBindVertexArray(vao);
@@ -284,7 +286,7 @@ public:
 				if (polygon_mode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 
-			if (render_type == FILL_CUBE) {
+			if (r_type == FILL_CUBE) {
 				basic_shader->bind();
 
 				if (curr_quads > max_quads) {
@@ -303,7 +305,7 @@ public:
 				curr_quads = 0;
 			}
 
-			if (render_type == LINE) {
+			if (r_type == LINE) {
 				basic_shader->bind();
 
 				glBindVertexArray(vao);
@@ -313,12 +315,12 @@ public:
 				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
 				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
 
-				glDrawArrays(GL_TRIANGLES, 0, vertices3D.size());
+				glDrawArrays(GL_LINES, 0, vertices3D.size());
 			}
 		}
 
 		if (vertices2D.size() != 0) {
-			if (render_type == UI_LINE) {
+			if (r_type == UI_LINE) {
 				ui_basic_shader->bind();
 
 				glBindVertexArray(vao);

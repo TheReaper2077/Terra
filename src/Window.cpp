@@ -33,12 +33,14 @@ void Window::Init() {
 	glfwSetKeyCallback(window, KeyListener::keyCallback);
 	glfwSetCursorPosCallback(window, MouseListener::mouseCallback);
 
-	glEnable(GL_DEPTH_TEST);
+	
 	glEnable(GL_BLEND);
+	glEnable(GL_LINE_SMOOTH);
 
 	glViewport(0, 0, WIDTH, HEIGHT);
-	glDepthFunc(GL_LESS);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_TEST);
 
 	renderer->Init();
 	camera->Init(window);
@@ -71,6 +73,19 @@ void render_crosshair() {
 	renderer->DrawLine(WIDTH/2, HEIGHT/2 - 20, WIDTH/2, HEIGHT/2 + 20);
 }
 
+void render_axis_crosshair() {
+	glm::vec3 tmp = camera->camera_pos + camera->camera_front * 15.0f;
+	renderer->SetColor(255, 0, 0, 255);
+	renderer->DrawLine(tmp.x, tmp.y, tmp.z, tmp.x + 1, tmp.y, tmp.z);
+	renderer->SetColor(0, 0, 255, 255);
+	renderer->DrawLine(tmp.x, tmp.y, tmp.z, tmp.x, tmp.y + 1, tmp.z);
+	renderer->SetColor(0, 255, 0, 255);
+	renderer->DrawLine(tmp.x, tmp.y, tmp.z, tmp.x, tmp.y, tmp.z + 1);
+	glLineWidth(2.5);
+	renderer->Render(LINE);
+	glLineWidth(1);
+}
+
 void Window::Gameloop() {
 	while (!glfwWindowShouldClose(window)) {
 		const auto &t_start = std::chrono::high_resolution_clock::now();
@@ -78,7 +93,7 @@ void Window::Gameloop() {
 		glfwPollEvents();
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		
 		camera->Update(dt);
 
 		renderer->SetColor(255, 0, 255, 255);
@@ -86,10 +101,12 @@ void Window::Gameloop() {
 		chunk_manager->Generate();
 		chunk_manager->Mesh();
 		chunk_manager->Render((glm::ivec3)camera->camera_pos);
+
+		glDisable(GL_DEPTH_TEST);
+
+		render_axis_crosshair();
 		
-		// glm::vec3 tmp = camera->camera_pos + camera->camera_front * 20.0f;
-		// renderer->FillCube(tmp, 1, 1, 1);
-		// renderer->FillCube((glm::ivec3)tmp, 1, 1, 1);
+		glEnable(GL_DEPTH_TEST);
 
 		uint8_t face;
 		ray->Update(camera->camera_pos, camera->camera_front, 20, face);
@@ -106,6 +123,7 @@ void Window::Gameloop() {
 		// glm::vec3 res = glm::inverse(renderer->projection) * glm::inverse(renderer->view) * glm::inverse(renderer->model) * glm::vec4(0, 0, -1.0f, 1.0f);
 
 		renderer->SetColor(0, 255, 0, 255);
+		// renderer->DrawLine(camera->camera_pos.x - 1, camera->camera_pos.y, camera->camera_pos.z - 1, camera->camera_pos.x + 1, camera->camera_pos.y, camera->camera_pos.z + 1);
 		// renderer->FillCube(tmp, 1.1, 1.1, 1.1);
 		// don't forget to normalise the vector at some point
 		// ray_wor = glm::normalize(ray_wor);
@@ -115,10 +133,8 @@ void Window::Gameloop() {
 		}
 
 		// std::cout << camera->camera_front.x << " " << camera->camera_front.y << " " << camera->camera_front.z << "\n";
-		
-		render_crosshair();
 
-		renderer->Render();
+		// renderer->Render();
 
 		glfwSwapBuffers(window);
 
