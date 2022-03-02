@@ -30,7 +30,7 @@ public:
 	void Add(const T &data, std::size_t offset = 0) {
 		bind();
 		curr_size = data.size()*sizeof(data[0]);
-		element_size = data.size();
+		if (data.size() > element_size) element_size = data.size();
 
 		if (curr_size > used_size) {
 			glBufferData(Target, curr_size, data.data(), GL_DYNAMIC_DRAW);
@@ -46,11 +46,12 @@ public:
 		glBufferSubData(Target, offset, size, data);
 	}
 
-	void Allocate(std::size_t allocate_size) {
-		if (allocate_size > curr_size) {
-			curr_size = allocate_size;
+	void Allocate(std::size_t allocate_size, std::size_t single_element_size) {
+		if (allocate_size > element_size) {
+			used_size = allocate_size*single_element_size;
+			element_size = allocate_size;
 			bind();
-			glBufferData(Target, curr_size, NULL, GL_DYNAMIC_DRAW);
+			glBufferData(Target, used_size, NULL, GL_DYNAMIC_DRAW);
 		}
 	}
 

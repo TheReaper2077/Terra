@@ -9,8 +9,10 @@ struct Chunk {
 	glm::ivec3 id;
 
 	BlockID chunk_blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {AIR_BLOCK};
-	std::vector<VertexChunk> mesh;
+	std::vector<VertexChunk> opaque_mesh, transparent_mesh;
 	Buffer<GL_ARRAY_BUFFER> buffer;
+
+	unsigned int total_opaque_quads, total_transparent_quads;
 
 	bool generated;
 	bool meshed;
@@ -61,43 +63,143 @@ void DrawQuad(T &mesh, uint8_t x, uint8_t y, uint8_t z, uint8_t w, uint8_t h, ui
 	auto& tile = TileRegistry::SharedInstance()->GetTile(tile_id);
 	float index = Renderer::SharedInstance()->GetTextureIndex(&tile.texture);
 
-	mesh.reserve(mesh.size() + 4);
+	mesh.reserve(mesh.size() + 6);
+
+	// 0, 1, 2, 1, 2, 3
 	
 	if (dir == 0) {
 		mesh.emplace_back(VertexChunk{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
 		mesh.emplace_back(VertexChunk{x, y + h, z, tile.tx + tile.tw, tile.ty, index});
-		mesh.emplace_back(VertexChunk{x + w, y + h, z, tile.tx, tile.ty, index});
 		mesh.emplace_back(VertexChunk{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x, y + h, z, tile.tx + tile.tw, tile.ty, index});
+		mesh.emplace_back(VertexChunk{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x + w, y + h, z, tile.tx, tile.ty, index});
+		
 	}
 	if (dir == 1) {
 		mesh.emplace_back(VertexChunk{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
 		mesh.emplace_back(VertexChunk{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		mesh.emplace_back(VertexChunk{x + w, y + h, z + d, tile.tx, tile.ty, index});
 		mesh.emplace_back(VertexChunk{x + w, y, z + d, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		mesh.emplace_back(VertexChunk{x + w, y, z + d, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x + w, y + h, z + d, tile.tx, tile.ty, index});
+		
 	}
 	if (dir == 3) {
 		mesh.emplace_back(VertexChunk{x, y, z, tile.tx + tile.tw, tile.ty + tile.th, index});
 		mesh.emplace_back(VertexChunk{x, y, z + d, tile.tx + tile.tw, tile.ty, index});
-		mesh.emplace_back(VertexChunk{x + w, y, z + d, tile.tx, tile.ty, index});
 		mesh.emplace_back(VertexChunk{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x, y, z + d, tile.tx + tile.tw, tile.ty, index});
+		mesh.emplace_back(VertexChunk{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x + w, y, z + d, tile.tx, tile.ty, index});
+		
 	}
 	if (dir == 2) {
 		mesh.emplace_back(VertexChunk{x, y + h, z, tile.tx + tile.tw, tile.ty + tile.th, index});
 		mesh.emplace_back(VertexChunk{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		mesh.emplace_back(VertexChunk{x + w, y + h, z + d, tile.tx, tile.ty, index});
 		mesh.emplace_back(VertexChunk{x + w, y + h, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		mesh.emplace_back(VertexChunk{x + w, y + h, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x + w, y + h, z + d, tile.tx, tile.ty, index});
+		
 	}
 	if (dir == 4) {
 		mesh.emplace_back(VertexChunk{x, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
 		mesh.emplace_back(VertexChunk{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		mesh.emplace_back(VertexChunk{x, y + h, z, tile.tx, tile.ty, index});
 		mesh.emplace_back(VertexChunk{x, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		mesh.emplace_back(VertexChunk{x, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x, y + h, z, tile.tx, tile.ty, index});
+		
 	}
 	if (dir == 5) {
 		mesh.emplace_back(VertexChunk{x + w, y, z + d, tile.tx + tile.tw, tile.ty + tile.th, index});
 		mesh.emplace_back(VertexChunk{x + w, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
-		mesh.emplace_back(VertexChunk{x + w, y + h, z, tile.tx, tile.ty, index});
 		mesh.emplace_back(VertexChunk{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x + w, y + h, z + d, tile.tx + tile.tw, tile.ty, index});
+		mesh.emplace_back(VertexChunk{x + w, y, z, tile.tx, tile.ty + tile.th, index});
+		mesh.emplace_back(VertexChunk{x + w, y + h, z, tile.tx, tile.ty, index});
+		
+	}
+}
+
+template <typename T>
+void CheckCube(uint8_t x, uint8_t y, uint8_t z, T& mesh, Chunk *chunk, Chunk *front, Chunk *back, Chunk *top, Chunk *bottom, Chunk *left, Chunk *right, BlockID block) {
+	auto& tiles = TileRegistry::SharedInstance()->GetBlock(block);
+
+	if (z - 1 >= 0) {
+		if (chunk->chunk_blocks[z - 1][y][x] == AIR_BLOCK) {
+			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.front, 0);
+		}
+	} else {
+		if (front != nullptr) {
+			if (front->chunk_blocks[15][y][x] == AIR_BLOCK) {
+				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.front, 0);
+				chunk->visible = true;
+			}
+		}
+	}
+	if (z + 1 < 16) {
+		if (chunk->chunk_blocks[z + 1][y][x] == AIR_BLOCK) {
+			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.back, 1);
+		}
+	} else {
+		if (back != nullptr) {
+			if (back->chunk_blocks[0][y][x] == AIR_BLOCK) {
+				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.back, 1);
+				chunk->visible = true;
+			}
+		}
+	}
+
+	if (y - 1 >= 0) {
+		if (chunk->chunk_blocks[z][y - 1][x] == AIR_BLOCK) {
+			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.bottom, 3);
+		}
+	} else {
+		if (bottom != nullptr) {
+			if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK) {
+				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.bottom, 3);
+				chunk->visible = true;
+			}
+		}
+	}
+	if (y + 1 < 16) {
+		if (chunk->chunk_blocks[z][y + 1][x] == AIR_BLOCK) {
+			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.top, 2);
+		}
+	} else {
+		if (top != nullptr) {
+			if (top->chunk_blocks[z][0][x] == AIR_BLOCK) {
+				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.top, 2);
+				chunk->visible = true;
+			}
+		}
+	}
+
+	if (x - 1 >= 0) {
+		if (chunk->chunk_blocks[z][y][x - 1] == AIR_BLOCK) {
+			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 4);
+		}
+	} else {
+		if (left != nullptr) {
+			if (left->chunk_blocks[z][y][15] == AIR_BLOCK) {
+				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 4);
+				chunk->visible = true;
+			}
+		}
+	}
+	if (x + 1 < 16) {
+		if (chunk->chunk_blocks[z][y][x + 1] == AIR_BLOCK) {
+			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.right, 5);
+		}
+	} else {
+		if (right != nullptr) {
+			if (right->chunk_blocks[z][y][0] == AIR_BLOCK) {
+				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 5);
+				chunk->visible = true;
+			}
+		}
 	}
 }
 
@@ -107,7 +209,7 @@ void MeshChunk(Chunk *chunk, Chunk *front, Chunk *back, Chunk *top, Chunk *botto
 	auto& chunk_blocks = chunk->chunk_blocks;
 	auto& id = chunk->id;
 	auto& visible = chunk->visible;
-	auto& mesh = chunk->mesh;
+	// auto& mesh = chunk->opaque_mesh;
 	
 	chunk->meshed = true;
 
@@ -117,87 +219,25 @@ void MeshChunk(Chunk *chunk, Chunk *front, Chunk *back, Chunk *top, Chunk *botto
 				auto& block = chunk_blocks[z][y][x];
 				if (block == AIR_BLOCK) continue;
 
-				auto& tiles = TileRegistry::SharedInstance()->GetBlock(block);
-
-				if (z - 1 >= 0) {
-					if (chunk_blocks[z - 1][y][x] == AIR_BLOCK) {
-						DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.front, 0);
-					}
+				if (block == GLASS_BLOCK) {
+					CheckCube(x, y, z, chunk->transparent_mesh, chunk, front, back, top, bottom, left, right, block);
 				} else {
-					if (front != nullptr) {
-						if (front->chunk_blocks[15][y][x] == AIR_BLOCK) {
-							DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.front, 0);
-							visible = true;
-						}
-					}
-				}
-				if (z + 1 < 16) {
-					if (chunk_blocks[z + 1][y][x] == AIR_BLOCK) {
-						DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.back, 1);
-					}
-				} else {
-					if (back != nullptr) {
-						if (back->chunk_blocks[0][y][x] == AIR_BLOCK) {
-							DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.back, 1);
-							visible = true;
-						}
-					}
-				}
-
-				if (y - 1 >= 0) {
-					if (chunk_blocks[z][y - 1][x] == AIR_BLOCK) {
-						DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.bottom, 3);
-					}
-				} else {
-					if (bottom != nullptr) {
-						if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK) {
-							DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.bottom, 3);
-							visible = true;
-						}
-					}
-				}
-				if (y + 1 < 16) {
-					if (chunk_blocks[z][y + 1][x] == AIR_BLOCK) {
-						DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.top, 2);
-					}
-				} else {
-					if (top != nullptr) {
-						if (top->chunk_blocks[z][0][x] == AIR_BLOCK) {
-							DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.top, 2);
-							visible = true;
-						}
-					}
-				}
-
-				if (x - 1 >= 0) {
-					if (chunk_blocks[z][y][x - 1] == AIR_BLOCK) {
-						DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 4);
-					}
-				} else {
-					if (left != nullptr) {
-						if (left->chunk_blocks[z][y][15] == AIR_BLOCK) {
-							DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 4);
-							visible = true;
-						}
-					}
-				}
-				if (x + 1 < 16) {
-					if (chunk_blocks[z][y][x + 1] == AIR_BLOCK) {
-						DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.right, 5);
-					}
-				} else {
-					if (right != nullptr) {
-						if (right->chunk_blocks[z][y][0] == AIR_BLOCK) {
-							DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 5);
-							visible = true;
-						}
-					}
+					CheckCube(x, y, z, chunk->opaque_mesh, chunk, front, back, top, bottom, left, right, block);
 				}
 			}
 		}
 	}
 
-	if (chunk->mesh.size() == 0) visible = false;
+	// mesh = opaque_mesh;
+	chunk->total_opaque_quads = chunk->opaque_mesh.size();
+	chunk->total_transparent_quads = chunk->transparent_mesh.size();
+	// mesh.insert(mesh.end(), std::make_move_iterator(transparent_mesh.begin()), std::make_move_iterator(transparent_mesh.end()));
+
+	// transparent_mesh.clear();
+	// opaque_mesh.clear();
+
+
+	if (chunk->opaque_mesh.size() == 0 && chunk->transparent_mesh.size() == 0) visible = false;
 }
 
 void GenerateChunk(Chunk *chunk) {

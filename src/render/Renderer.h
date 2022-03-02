@@ -90,7 +90,7 @@ public:
 
 		UBO = new Buffer<GL_UNIFORM_BUFFER>();
 		UBO->Init();
-		UBO->Allocate(3*sizeof(glm::mat4));
+		UBO->Allocate(3, sizeof(glm::mat4));
 		UBO->BindRangeToIndex(0, NULL, 2*sizeof(glm::mat4));
 		UBO->BindRangeToIndex(1, 2*sizeof(glm::mat4), sizeof(glm::mat4));
 
@@ -339,11 +339,11 @@ public:
 	}
 
 	void RenderMesh(Buffer<GL_ARRAY_BUFFER> *buffer, glm::vec3 id) {
-		curr_quads = buffer->element_size/4;
+		// curr_quads = buffer->element_size/4;
 
-		if (curr_quads > max_quads) {
-			IncreaseRectIndices();
-		}
+		// if (curr_quads > max_quads) {
+		// 	IncreaseRectIndices();
+		// }
 
 		chunk_shader->bind();
 		chunk_shader->setUniformVec("offset", id);
@@ -358,9 +358,11 @@ public:
 		glVertexAttribPointer(0, 3, GL_BYTE, false, sizeof(VertexChunk), 0);
 		glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(VertexChunk), (void*)offsetof(VertexChunk, color));
 
-		glDrawElements(GL_TRIANGLES, buffer->element_size*1.5, GL_UNSIGNED_INT, NULL);
+		// glDrawElements(GL_TRIANGLES, buffer->element_size*1.5, GL_UNSIGNED_INT, NULL);
+		// glDrawArraysInstanced()
+		glDrawArrays(GL_TRIANGLES, 0, buffer->element_size);
 
-		curr_quads = 0;
+		// curr_quads = 0;
 		next_tex_index = 0;
 		index_tex_map.clear();
 	}
