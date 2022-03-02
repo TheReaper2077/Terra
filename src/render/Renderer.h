@@ -26,7 +26,7 @@ private:
 
 	TextureHandler *texture_handler = nullptr;
 
-	Shader *texture_shader, *basic_shader, *ui_basic_shader;
+	Shader *chunk_shader, *basic_shader, *ui_basic_shader;
 	RenderType render_type;
 
 	float color[4] = {1, 1, 1, 1};
@@ -70,11 +70,11 @@ public:
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 
-		texture_shader = new Shader();
-		texture_shader->Init(TEXTURE_VS, TEXTURE_FS);
-		texture_shader->bind();
+		chunk_shader = new Shader();
+		chunk_shader->Init(CHUNK_VS, CHUNK_FS);
+		chunk_shader->bind();
 
-		glUniformBlockBinding(texture_shader->ID, glGetUniformBlockIndex(texture_shader->ID, "Matrices"), 0);
+		glUniformBlockBinding(chunk_shader->ID, glGetUniformBlockIndex(chunk_shader->ID, "Matrices"), 0);
 		
 		basic_shader = new Shader();
 		basic_shader->Init(BASIC_VS, BASIC_FS);
@@ -90,18 +90,18 @@ public:
 
 		UBO = new Buffer<GL_UNIFORM_BUFFER>();
 		UBO->Init();
-		UBO->Allocate(2*sizeof(glm::mat4));
-		UBO->BindRangeToIndex(0, NULL, sizeof(glm::mat4));
-		UBO->BindRangeToIndex(1, sizeof(glm::mat4), sizeof(glm::mat4));
+		UBO->Allocate(3*sizeof(glm::mat4));
+		UBO->BindRangeToIndex(0, NULL, 2*sizeof(glm::mat4));
+		UBO->BindRangeToIndex(1, 2*sizeof(glm::mat4), sizeof(glm::mat4));
 
 		texture_handler = new TextureHandler();
-		texture_handler->Init(texture_shader);
+		texture_handler->Init(chunk_shader);
 
 		glm::mat4 ortho_projection = glm::ortho<float>(0, WIDTH, HEIGHT, 0, -1, 1);
 		glm::mat4 ortho_view = glm::mat4(1.0f);
 		glm::mat4 ortho_model = glm::mat4(1.0f);
 
-		UBO->Add(sizeof(glm::mat4), sizeof(glm::mat4), &(ortho_projection * ortho_view * ortho_model)[0][0]);
+		UBO->Add(2*sizeof(glm::mat4), sizeof(glm::mat4), &(ortho_projection * ortho_view * ortho_model)[0][0]);
 	}
 
 	void SetProjection(const glm::mat4 &projection) {
@@ -280,7 +280,7 @@ public:
 				glBufferData(GL_ARRAY_BUFFER, vertices3D.size() * sizeof(vertices3D[0]), vertices3D.data(), GL_STATIC_DRAW);
 
 				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
-				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
+				glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
 
 				glDrawArrays(GL_QUADS, 0, vertices3D.size());
 				if (polygon_mode) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -298,7 +298,7 @@ public:
 				glBufferData(GL_ARRAY_BUFFER, vertices3D.size() * sizeof(vertices3D[0]), vertices3D.data(), GL_STATIC_DRAW);
 
 				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
-				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
+				glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
 
 				glDrawElements(GL_TRIANGLES, vertices3D.size()*1.5, GL_UNSIGNED_INT, NULL);
 
@@ -313,7 +313,7 @@ public:
 				glBufferData(GL_ARRAY_BUFFER, vertices3D.size() * sizeof(vertices3D[0]), vertices3D.data(), GL_STATIC_DRAW);
 
 				glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
-				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
+				glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
 
 				glDrawArrays(GL_LINES, 0, vertices3D.size());
 			}
@@ -328,7 +328,7 @@ public:
 				glBufferData(GL_ARRAY_BUFFER, vertices2D.size() * sizeof(vertices2D[0]), vertices2D.data(), GL_STATIC_DRAW);
 
 				glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(Vertex2D), 0);
-				glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex2D), (void*)offsetof(Vertex2D, color));
+				glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex2D), (void*)offsetof(Vertex2D, color));
 
 				glDrawArrays(GL_LINES, 0, vertices2D.size());
 			}
@@ -338,14 +338,15 @@ public:
 		vertices2D.clear();
 	}
 
-	void RenderMesh(Buffer<GL_ARRAY_BUFFER> *buffer) {
+	void RenderMesh(Buffer<GL_ARRAY_BUFFER> *buffer, glm::vec3 id) {
 		curr_quads = buffer->element_size/4;
 
 		if (curr_quads > max_quads) {
 			IncreaseRectIndices();
 		}
 
-		texture_shader->bind();
+		chunk_shader->bind();
+		chunk_shader->setUniformVec("offset", id);
 
 		for (const auto& pair: index_tex_map) {
 			texture_handler->bindTextureUnit(next_tex_index, pair.second);
@@ -354,8 +355,8 @@ public:
 		glBindVertexArray(vao);
 		buffer->bind();
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex3D), 0);
-		glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Vertex3D), (void*)offsetof(Vertex3D, color));
+		glVertexAttribPointer(0, 3, GL_BYTE, false, sizeof(VertexChunk), 0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(VertexChunk), (void*)offsetof(VertexChunk, color));
 
 		glDrawElements(GL_TRIANGLES, buffer->element_size*1.5, GL_UNSIGNED_INT, NULL);
 

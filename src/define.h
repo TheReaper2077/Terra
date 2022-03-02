@@ -43,7 +43,7 @@
 #define BASIC_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\basic.fs"
 #define UI_BASIC_VS "D:\\C++\\Ortho Test\\src\\render\\shaders\\ui_basic.vs"
 #define UI_BASIC_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\ui_basic.fs"
-#define TEXTURE_VS "D:\\C++\\Ortho Test\\src\\render\\shaders\\texture.vs"
-#define TEXTURE_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\texture.fs"
+#define CHUNK_VS "D:\\C++\\Ortho Test\\src\\render\\shaders\\chunk.vs"
+#define CHUNK_FS "D:\\C++\\Ortho Test\\src\\render\\shaders\\chunk.fs"
 
 #define CHUNK_SIZE 16
