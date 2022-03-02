@@ -298,7 +298,7 @@ void RenderChunk(Chunk *chunk) {
 
 	if (visible && chunk->meshed && chunk->buffer.init) {
 		// Renderer::SharedInstance()->SetModel(::ivec3()
-		Renderer::SharedInstance()->RenderMesh(&chunk->buffer, id);
+		Renderer::SharedInstance()->RenderMesh(&chunk->buffer, id, chunk->total_opaque_quads, chunk->total_transparent_quads);
 		// Renderer::SharedInstance()->RenderMesh(chunk->mesh);
 	}
 

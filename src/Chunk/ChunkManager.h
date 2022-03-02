@@ -211,20 +211,20 @@ public:
 				if (!chunk->buffer.init) chunk->buffer.Init();
 
 				// if (chunk->total_opaque_quads) chunk->buffer.Add(chunk->opaque_mesh);
-				if (chunk->total_transparent_quads > 0) chunk->buffer.Add(chunk->transparent_mesh);
-				// if (chunk->total_opaque_quads > 0 && chunk->total_transparent_quads > 0) {
-				// 	std::size_t element_size = chunk->opaque_mesh.size() + chunk->transparent_mesh.size();
-				// 	chunk->buffer.Allocate(element_size, sizeof(chunk->opaque_mesh[0]));
-				// 	chunk->buffer.Add(chunk->opaque_mesh, 0);
-				// 	chunk->buffer.Add(chunk->transparent_mesh, chunk->opaque_mesh.size()*sizeof(chunk->opaque_mesh[0]));
-				// } else {
-				// 	if (chunk->total_opaque_quads > 0) {
-				// 		chunk->buffer.Add(chunk->opaque_mesh);
-				// 	}
-				// 	if (chunk->total_transparent_quads > 0) {
-				// 		chunk->buffer.Add(chunk->transparent_mesh);
-				// 	}
-				// }
+				// if (chunk->total_transparent_quads > 0) chunk->buffer.Add(chunk->transparent_mesh);
+				if (chunk->total_opaque_quads > 0 && chunk->total_transparent_quads > 0) {
+					std::size_t element_size = chunk->opaque_mesh.size() + chunk->transparent_mesh.size();
+					chunk->buffer.Allocate(element_size, sizeof(chunk->opaque_mesh[0]));
+					chunk->buffer.Add(chunk->opaque_mesh, 0);
+					chunk->buffer.Add(chunk->transparent_mesh, chunk->opaque_mesh.size()*sizeof(chunk->opaque_mesh[0]));
+				} else {
+					if (chunk->total_opaque_quads > 0) {
+						chunk->buffer.Add(chunk->opaque_mesh);
+					}
+					if (chunk->total_transparent_quads > 0) {
+						chunk->buffer.Add(chunk->transparent_mesh);
+					}
+				}
 
 				chunk->opaque_mesh.clear();
 				chunk->transparent_mesh.clear();

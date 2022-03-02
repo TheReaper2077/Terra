@@ -338,7 +338,7 @@ public:
 		vertices2D.clear();
 	}
 
-	void RenderMesh(Buffer<GL_ARRAY_BUFFER> *buffer, glm::vec3 id) {
+	void RenderMesh(Buffer<GL_ARRAY_BUFFER> *buffer, glm::vec3 id, unsigned int opaque, unsigned int transparent) {
 		// curr_quads = buffer->element_size/4;
 
 		// if (curr_quads > max_quads) {
@@ -360,7 +360,9 @@ public:
 
 		// glDrawElements(GL_TRIANGLES, buffer->element_size*1.5, GL_UNSIGNED_INT, NULL);
 		// glDrawArraysInstanced()
-		glDrawArrays(GL_TRIANGLES, 0, buffer->element_size);
+		glDrawArrays(GL_TRIANGLES, 0, opaque);
+		glDrawArrays(GL_TRIANGLES, opaque, transparent);
+		// glMultiDrawArrays(GL_TRIANGLES);
 
 		// curr_quads = 0;
 		next_tex_index = 0;
