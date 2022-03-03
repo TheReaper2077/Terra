@@ -34,10 +34,22 @@ public:
 		return nullptr;
 	}
 
-	void Render() {
+	void RenderOpaque() {
 		for (auto& chunk: chunk_store) {
-			if (!chunk.second->meshed && chunk.second->visible) continue;
-			RenderChunk(chunk.second.get());
+			if (!chunk.second->meshed && !chunk.second->visible) continue;
+			if (chunk.second->total_opaque_quads > 0) RenderChunk(chunk.second.get());
+
+			// if (chunk.second.get()->top_chunk && !top_found) {
+			// 	top_found = true;
+			// 	std::cout << "found\n";
+			// }
+		}
+	}
+
+	void RenderTransparent() {
+		for (auto& chunk: chunk_store) {
+			if (!chunk.second->meshed && !chunk.second->visible) continue;
+			if (chunk.second->total_transparent_quads > 0) RenderChunk(chunk.second.get(), true);
 
 			// if (chunk.second.get()->top_chunk && !top_found) {
 			// 	top_found = true;

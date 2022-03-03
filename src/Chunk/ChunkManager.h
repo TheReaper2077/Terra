@@ -276,9 +276,16 @@ public:
 				// 		column->id.y += 1;
 				// 		generate_request.push_back(glm::ivec3(column->id.x, column->id.y*16, column->id.z));
 				// 	}
-				column->Render();
+				column->RenderOpaque();
 				// } else {
 				// 	generate_request.push_back(id);
+			}
+		}
+
+		for (int z = -16;  z != 16; z++) {
+			for (int x = -16;  x != 16; x++) {
+				auto* column = GetChunkColumn(glm::ivec2(pos.x + x*16, pos.z + z*16));
+				column->RenderTransparent();
 			}
 		}
 	}

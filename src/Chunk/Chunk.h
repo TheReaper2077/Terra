@@ -128,24 +128,24 @@ void CheckCube(uint8_t x, uint8_t y, uint8_t z, T& mesh, Chunk *chunk, Chunk *fr
 	auto& tiles = TileRegistry::SharedInstance()->GetBlock(block);
 
 	if (z - 1 >= 0) {
-		if (chunk->chunk_blocks[z - 1][y][x] == AIR_BLOCK) {
+		if (chunk->chunk_blocks[z - 1][y][x] == AIR_BLOCK || chunk->chunk_blocks[z - 1][y][x] == GLASS_BLOCK) {
 			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.front, 0);
 		}
 	} else {
 		if (front != nullptr) {
-			if (front->chunk_blocks[15][y][x] == AIR_BLOCK) {
+			if (front->chunk_blocks[15][y][x] == AIR_BLOCK || front->chunk_blocks[15][y][x] == GLASS_BLOCK) {
 				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.front, 0);
 				chunk->visible = true;
 			}
 		}
 	}
 	if (z + 1 < 16) {
-		if (chunk->chunk_blocks[z + 1][y][x] == AIR_BLOCK) {
+		if (chunk->chunk_blocks[z + 1][y][x] == AIR_BLOCK || chunk->chunk_blocks[z + 1][y][x] == GLASS_BLOCK) {
 			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.back, 1);
 		}
 	} else {
 		if (back != nullptr) {
-			if (back->chunk_blocks[0][y][x] == AIR_BLOCK) {
+			if (back->chunk_blocks[0][y][x] == AIR_BLOCK || back->chunk_blocks[0][y][x] == GLASS_BLOCK) {
 				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.back, 1);
 				chunk->visible = true;
 			}
@@ -153,24 +153,24 @@ void CheckCube(uint8_t x, uint8_t y, uint8_t z, T& mesh, Chunk *chunk, Chunk *fr
 	}
 
 	if (y - 1 >= 0) {
-		if (chunk->chunk_blocks[z][y - 1][x] == AIR_BLOCK) {
+		if (chunk->chunk_blocks[z][y - 1][x] == AIR_BLOCK || chunk->chunk_blocks[z][y - 1][x] == GLASS_BLOCK) {
 			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.bottom, 3);
 		}
 	} else {
 		if (bottom != nullptr) {
-			if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK) {
+			if (bottom->chunk_blocks[z][15][x] == AIR_BLOCK || bottom->chunk_blocks[z][15][x] == GLASS_BLOCK) {
 				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.bottom, 3);
 				chunk->visible = true;
 			}
 		}
 	}
 	if (y + 1 < 16) {
-		if (chunk->chunk_blocks[z][y + 1][x] == AIR_BLOCK) {
+		if (chunk->chunk_blocks[z][y + 1][x] == AIR_BLOCK || chunk->chunk_blocks[z][y + 1][x] == GLASS_BLOCK) {
 			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.top, 2);
 		}
 	} else {
 		if (top != nullptr) {
-			if (top->chunk_blocks[z][0][x] == AIR_BLOCK) {
+			if (top->chunk_blocks[z][0][x] == AIR_BLOCK || top->chunk_blocks[z][0][x] == GLASS_BLOCK) {
 				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.top, 2);
 				chunk->visible = true;
 			}
@@ -178,24 +178,24 @@ void CheckCube(uint8_t x, uint8_t y, uint8_t z, T& mesh, Chunk *chunk, Chunk *fr
 	}
 
 	if (x - 1 >= 0) {
-		if (chunk->chunk_blocks[z][y][x - 1] == AIR_BLOCK) {
+		if (chunk->chunk_blocks[z][y][x - 1] == AIR_BLOCK || chunk->chunk_blocks[z][y][x - 1] == GLASS_BLOCK) {
 			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 4);
 		}
 	} else {
 		if (left != nullptr) {
-			if (left->chunk_blocks[z][y][15] == AIR_BLOCK) {
+			if (left->chunk_blocks[z][y][15] == AIR_BLOCK || left->chunk_blocks[z][y][15] == GLASS_BLOCK) {
 				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 4);
 				chunk->visible = true;
 			}
 		}
 	}
 	if (x + 1 < 16) {
-		if (chunk->chunk_blocks[z][y][x + 1] == AIR_BLOCK) {
+		if (chunk->chunk_blocks[z][y][x + 1] == AIR_BLOCK || chunk->chunk_blocks[z][y][x + 1] == GLASS_BLOCK) {
 			DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.right, 5);
 		}
 	} else {
 		if (right != nullptr) {
-			if (right->chunk_blocks[z][y][0] == AIR_BLOCK) {
+			if (right->chunk_blocks[z][y][0] == AIR_BLOCK || right->chunk_blocks[z][y][0] == GLASS_BLOCK) {
 				DrawQuad(mesh, x, y, z, 1, 1, 1, tiles.left, 5);
 				chunk->visible = true;
 			}
@@ -291,14 +291,15 @@ void GenerateChunk(Chunk *chunk) {
 	if (visible) visible = (i < 256);
 }
 
-void RenderChunk(Chunk *chunk) {
+void RenderChunk(Chunk *chunk, bool transparent = false) {
 	auto& id = chunk->id;
 	auto& visible = chunk->visible;
 	auto& top_chunk = chunk->top_chunk;
 
 	if (visible && chunk->meshed && chunk->buffer.init) {
 		// Renderer::SharedInstance()->SetModel(::ivec3()
-		Renderer::SharedInstance()->RenderMesh(&chunk->buffer, id, chunk->total_opaque_quads, chunk->total_transparent_quads);
+		if (!transparent) Renderer::SharedInstance()->RenderMesh(&chunk->buffer, id, chunk->total_opaque_quads);
+		else Renderer::SharedInstance()->RenderMesh(&chunk->buffer, id, chunk->total_transparent_quads,chunk->total_opaque_quads);
 		// Renderer::SharedInstance()->RenderMesh(chunk->mesh);
 	}
 
